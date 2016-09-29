@@ -36,7 +36,6 @@ target_link_libraries(ForceController ${catkin_LIBRARIES})
 add_library(MuscleActivityController src/MuscleActivityController.cpp)
 add_dependencies(MuscleActivityController common_utilities_generate_messages_cpp)
 target_link_libraries(MuscleActivityController ${catkin_LIBRARIES})
-
 #==============================================================================
 # Installation
 #==============================================================================
