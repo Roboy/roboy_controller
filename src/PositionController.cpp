@@ -54,11 +54,9 @@ class PositionController : public controller_interface::Controller<hardware_inte
 
 			if(steered == PLAY_TRAJECTORY) {
 				dt += period.nsec*1e-6f;
-//                ROS_INFO("%f", dt );
+                ROS_INFO("%f", dt );
 				if (dt<trajectory_duration) {
 					setpoint = spline_trajectory(dt);
-                    if(setpoint<0.0)
-                        setpoint = 0.0;
 				}else{
                     setpoint = 0.0;
 					myStatus = TRAJECTORY_DONE;
@@ -122,12 +120,12 @@ class PositionController : public controller_interface::Controller<hardware_inte
 			status_pub.publish(statusMsg);
 
 			trajectory_duration = req.trajectory.waypoints.size()*req.trajectory.samplerate;
-			ROS_INFO("New trajectory [%d elements] at sampleRate %f, duration %f",
-					 (int)req.trajectory.waypoints.size(), req.trajectory.samplerate, trajectory_duration);
+			ROS_INFO("%s new trajectory [%d elements] at sampleRate %f, duration %f",
+					 joint_name.c_str(), (int)req.trajectory.waypoints.size(), req.trajectory.samplerate, trajectory_duration);
 			if(!req.trajectory.waypoints.empty()) {
 				vector<double> x,y;
 				for(uint i=0; i<req.trajectory.waypoints.size(); i++){
-                    x.push_back(i*req.trajectory.samplerate);
+                    x.push_back((float)i*req.trajectory.samplerate);
                     if(req.trajectory.waypoints[i]!=FLT_MAX) {
                         y.push_back(req.trajectory.waypoints[i]);
                         cout << req.trajectory.waypoints[i] << " ";
@@ -136,6 +134,12 @@ class PositionController : public controller_interface::Controller<hardware_inte
                         cout << req.trajectory.waypoints[i] << " ";
                     }
 				}
+                x.push_back((float)trajectory_duration+0*req.trajectory.samplerate);
+                x.push_back((float)trajectory_duration+1*req.trajectory.samplerate);
+                x.push_back((float)trajectory_duration+2*req.trajectory.samplerate);
+                y.push_back(req.trajectory.waypoints.back());
+                y.push_back(req.trajectory.waypoints.back());
+                y.push_back(req.trajectory.waypoints.back());
 				cout << endl;
 				spline_trajectory.set_points(x,y);
 				myStatus = ControllerState::TRAJECTORY_READY;
