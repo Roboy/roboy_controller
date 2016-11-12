@@ -1,4 +1,4 @@
-#include "MuscleActivityController.hpp"
+#include "roboy_controller/MuscleActivityController.hpp"
 
 MuscleActivityController::MuscleActivityController() {
 

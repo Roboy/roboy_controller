@@ -4,7 +4,7 @@
 #include <std_msgs/Float32.h>
 #include "common_utilities/ControllerState.h"
 #include "common_utilities/Steer.h"
-#include "CommonDefinitions.h"
+#include "common_utilities/CommonDefinitions.h"
 #include <mutex>
 
 using namespace std;

@@ -5,9 +5,9 @@
 #include "common_utilities/ControllerState.h"
 #include "common_utilities/Steer.h"
 #include "common_utilities/SetTrajectory.h"
-#include "CommonDefinitions.h"
-#include "spline.h"
-#include "timer.hpp"
+#include "common_utilities/CommonDefinitions.h"
+#include "roboy_controller/spline.h"
+#include "common_utilities/timer.hpp"
 
 using namespace std;
 
