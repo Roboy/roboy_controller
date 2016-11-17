@@ -6,7 +6,7 @@
 #include "common_utilities/Steer.h"
 #include "common_utilities/SetTrajectory.h"
 #include "common_utilities/CommonDefinitions.h"
-#include "spline.h"
+#include "roboy_controller/spline.h"
 #include "common_utilities/timer.hpp"
 
 using namespace std;
