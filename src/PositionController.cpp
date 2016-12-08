@@ -6,8 +6,9 @@
 #include "common_utilities/Steer.h"
 #include "common_utilities/SetTrajectory.h"
 #include "common_utilities/CommonDefinitions.h"
-#include "roboy_controller/spline.h"
 #include "common_utilities/timer.hpp"
+#include <ecl/geometry.hpp>
+#include <map>
 
 using namespace std;
 
@@ -39,10 +40,6 @@ class PositionController : public controller_interface::Controller<hardware_inte
 				ROS_INFO_THROTTLE(1,"PositionController %s waiting for subscriber", joint_name.c_str());
 			statusMsg.state = myStatus;
 			status_pub.publish(statusMsg);
-			// initialize spline to current position (spline needs at least three values)
-			setpoint = joint.getPosition();
-			vector<double> initial_zero_x = {0,1,2}, initial_zero_y = {setpoint,setpoint,setpoint};
-			spline_trajectory.set_points(initial_zero_x,initial_zero_y);
 			return true;
 		}
 
@@ -54,11 +51,9 @@ class PositionController : public controller_interface::Controller<hardware_inte
 
 			if(steered == PLAY_TRAJECTORY) {
 				dt += period.nsec*1e-6f;
-                ROS_INFO("%f", dt );
-				if (dt<trajectory_duration) {
-					setpoint = spline_trajectory(dt);
+				if (dt<trajectory_duration[id]) {
+					setpoint = cubic[id](dt);
 				}else{
-                    setpoint = 0.0;
 					myStatus = TRAJECTORY_DONE;
 					statusMsg.state = myStatus;
 					steered = STOP_TRAJECTORY;
@@ -69,29 +64,35 @@ class PositionController : public controller_interface::Controller<hardware_inte
 		}
 
 		void steer(const common_utilities::Steer::ConstPtr& msg){
-			switch (msg->steeringCommand){
-				case STOP_TRAJECTORY:
-					dt = 0;
-					steered = STOP_TRAJECTORY;
-					myStatus = TRAJECTORY_READY;
-					ROS_INFO("%s received steering STOP", joint_name.c_str());
-					break;
-				case PLAY_TRAJECTORY:
-					steered = PLAY_TRAJECTORY;
-					myStatus = TRAJECTORY_PLAYING;
-					ROS_INFO("%s received steering PLAY", joint_name.c_str());
-					break;
-				case PAUSE_TRAJECTORY:
-					if (steered==PAUSE_TRAJECTORY) {
-						steered = PLAY_TRAJECTORY;
-						myStatus = TRAJECTORY_PLAYING;
-					}else {
-						steered = PAUSE_TRAJECTORY;
-						myStatus = TRAJECTORY_READY;
-					}
-			}
-			statusMsg.state = myStatus;
-			status_pub.publish(statusMsg);
+            if(cubic.find(msg->id)!=cubic.end()) {
+                id = msg->id;
+                switch (msg->steeringCommand) {
+                    case STOP_TRAJECTORY:
+                        dt = 0;
+                        steered = STOP_TRAJECTORY;
+                        myStatus = TRAJECTORY_READY;
+                        ROS_INFO("%s received steering STOP", joint_name.c_str());
+                        break;
+                    case PLAY_TRAJECTORY:
+                        steered = PLAY_TRAJECTORY;
+                        myStatus = TRAJECTORY_PLAYING;
+                        ROS_INFO("%s received steering PLAY", joint_name.c_str());
+                        break;
+                    case PAUSE_TRAJECTORY:
+                        if (steered == PAUSE_TRAJECTORY) {
+                            steered = PLAY_TRAJECTORY;
+                            myStatus = TRAJECTORY_PLAYING;
+                        } else {
+                            steered = PAUSE_TRAJECTORY;
+                            myStatus = TRAJECTORY_READY;
+                        }
+                }
+                statusMsg.state = myStatus;
+                status_pub.publish(statusMsg);
+            }else{
+                ROS_WARN("%s received steering for id %d, but a trajectory with this id is NOT available, yet",
+                         joint_name.c_str(), msg->id);
+            }
 		}
 
 		void starting(const ros::Time& time) { ROS_INFO("controller started for %s", joint_name.c_str());}
@@ -105,8 +106,9 @@ class PositionController : public controller_interface::Controller<hardware_inte
 		ros::Subscriber steer_sub;
 		ros::Publisher  status_pub, trajectory_pub;
         ros::ServiceServer trajectory_srv;
-		tk::spline spline_trajectory;
-		double trajectory_duration = 0;
+        int id;
+        map<int,ecl::CubicSpline> cubic;
+		map<int,double> trajectory_duration;
 		int8_t myStatus = UNDEFINED;
 		int8_t steered = STOP_TRAJECTORY;
 		std_msgs::Float32 pos_msg;
@@ -119,40 +121,36 @@ class PositionController : public controller_interface::Controller<hardware_inte
 			statusMsg.state = myStatus;
 			status_pub.publish(statusMsg);
 
-			trajectory_duration = req.trajectory.waypoints.size()*req.trajectory.samplerate;
-			ROS_INFO("%s new trajectory [%d elements] at sampleRate %f, duration %f",
-					 joint_name.c_str(), (int)req.trajectory.waypoints.size(), req.trajectory.samplerate, trajectory_duration);
-			if(!req.trajectory.waypoints.empty()) {
-				vector<double> x,y;
+			if(req.trajectory.waypoints.size()>0 && req.trajectory.samplerate > 0) {
+				ecl::Array<double> x(req.trajectory.waypoints.size()),y(req.trajectory.waypoints.size());
 				for(uint i=0; i<req.trajectory.waypoints.size(); i++){
-                    x.push_back((float)i*req.trajectory.samplerate);
+                    x[i] = ((double)i*req.trajectory.samplerate);
                     if(req.trajectory.waypoints[i]!=FLT_MAX) {
-                        y.push_back(req.trajectory.waypoints[i]);
+                        y[i] = (req.trajectory.waypoints[i]);
                         cout << req.trajectory.waypoints[i] << " ";
                     }else{
-                        y.push_back(0.0);
+                        y[i] = 0.0;
                         cout << req.trajectory.waypoints[i] << " ";
                     }
 				}
-                x.push_back((float)trajectory_duration+0*req.trajectory.samplerate);
-                x.push_back((float)trajectory_duration+1*req.trajectory.samplerate);
-                x.push_back((float)trajectory_duration+2*req.trajectory.samplerate);
-                y.push_back(req.trajectory.waypoints.back());
-                y.push_back(req.trajectory.waypoints.back());
-                y.push_back(req.trajectory.waypoints.back());
 				cout << endl;
-				spline_trajectory.set_points(x,y);
+                trajectory_duration[req.trajectory.id] = req.trajectory.waypoints.size()*req.trajectory.samplerate;
+                cubic[req.trajectory.id] = ecl::CubicSpline::Natural(x, y);
+                ROS_INFO("%s new trajectory [id: %d, elements: %d] at sampleRate %f, duration %f",
+                         joint_name.c_str(), req.trajectory.id, (int)req.trajectory.waypoints.size(), req.trajectory.samplerate,
+                         trajectory_duration[req.trajectory.id]);
 				myStatus = ControllerState::TRAJECTORY_READY;
 				statusMsg.state = myStatus;
 				status_pub.publish(statusMsg);
-				dt = 0;
                 return true;
 			}else{
+                if( req.trajectory.waypoints.size()<=0 )
+                    ROS_ERROR("%s new trajectory but it is empty!", joint_name.c_str());
+                if(req.trajectory.samplerate <= 0)
+                    ROS_ERROR("%s new trajectory but sample rate is %f!", joint_name.c_str(), req.trajectory.samplerate);
 				myStatus = ControllerState::TRAJECTORY_FAILED;
 				statusMsg.state = myStatus;
 				status_pub.publish(statusMsg);
-				dt = 0;
-				trajectory_duration = 0;
                 return false;
 			}
 		}

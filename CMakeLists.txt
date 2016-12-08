@@ -9,7 +9,7 @@ SET(CMAKE_BUILD_TYPE Debug)
 # Dependencies
 #==============================================================================
 find_package(catkin REQUIRED COMPONENTS roscpp controller_interface hardware_interface pluginlib
-        common_utilities)
+        common_utilities ecl_geometry)
 catkin_package(CATKIN_DEPENDS message_runtime common_utilities)
 
 include_directories(
