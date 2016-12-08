@@ -60,7 +60,10 @@ class PositionController : public controller_interface::Controller<hardware_inte
 					status_pub.publish(statusMsg);
 				}
 				joint.setCommand(setpoint);
-			}
+			}else{
+                // hold the position
+                joint.setCommand(pos);
+            }
 		}
 
 		void steer(const common_utilities::Steer::ConstPtr& msg){
