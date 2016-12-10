@@ -50,7 +50,9 @@ class PositionController : public controller_interface::Controller<hardware_inte
 			trajectory_pub.publish(pos_msg);
 
 			if(steered == PLAY_TRAJECTORY) {
-				dt += period.nsec*1e-6f;
+                ros::Duration d = time-time_old;
+                time_old = time;
+				dt += d.nsec*1e-6f;
 				if (dt<trajectory_duration[id]) {
 					setpoint = cubic[id](dt);
 				}else{
@@ -77,6 +79,7 @@ class PositionController : public controller_interface::Controller<hardware_inte
                         ROS_INFO("%s received steering STOP", joint_name.c_str());
                         break;
                     case PLAY_TRAJECTORY:
+                        time_old = ros::Time::now();
                         steered = PLAY_TRAJECTORY;
                         myStatus = TRAJECTORY_PLAYING;
                         ROS_INFO("%s received steering PLAY", joint_name.c_str());
@@ -116,6 +119,7 @@ class PositionController : public controller_interface::Controller<hardware_inte
 		int8_t steered = STOP_TRAJECTORY;
 		std_msgs::Float32 pos_msg;
 		float dt = 0;
+        ros::Time time_old;
 		common_utilities::ControllerState statusMsg;
 		bool trajectoryPreprocess(common_utilities::SetTrajectory::Request &req,
                                     common_utilities::SetTrajectory::Response &res){
