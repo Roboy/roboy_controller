@@ -3,7 +3,7 @@
 motor0:
   id: 0
   joint_name: motor0
-  type: roboy_controller/PositionController
+  type: roboy_controller/ForceController
 
 motor1:
   id: 1

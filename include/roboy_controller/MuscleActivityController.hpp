@@ -2,8 +2,8 @@
 #include <hardware_interface/joint_command_interface.h>
 #include <pluginlib/class_list_macros.h>
 #include <std_msgs/Float32.h>
-#include "common_utilities/ControllerState.h"
-#include "common_utilities/Steer.h"
+#include "roboy_communication_middleware/ControllerState.h"
+#include "roboy_communication_middleware/Steer.h"
 #include "common_utilities/CommonDefinitions.h"
 #include <mutex>
 
@@ -18,7 +18,7 @@ public:
 
     void update(const ros::Time& time, const ros::Duration& period);
 
-    void steer(const common_utilities::Steer::ConstPtr& msg);
+    void steer(const roboy_communication_middleware::Steer::ConstPtr& msg);
 
     void starting(const ros::Time& time) { ROS_INFO("controller started for %s", joint_name.c_str());}
     void stopping(const ros::Time& time) { ROS_INFO("controller stopped for %s", joint_name.c_str());}
@@ -36,7 +36,7 @@ private:
     int8_t steered = PLAY_TRAJECTORY;
     std_msgs::Float32 eff_msg;
     float dt = 0;
-    common_utilities::ControllerState statusMsg;
+    roboy_communication_middleware::ControllerState statusMsg;
     mutex mux;
 };
 

@@ -2,9 +2,9 @@
 #include <hardware_interface/joint_command_interface.h>
 #include <pluginlib/class_list_macros.h>
 #include <std_msgs/Float32.h>
-#include "common_utilities/ControllerState.h"
-#include "common_utilities/Steer.h"
-#include "common_utilities/SetTrajectory.h"
+#include "roboy_communication_middleware/ControllerState.h"
+#include "roboy_communication_middleware/Steer.h"
+#include "roboy_communication_middleware/SetTrajectory.h"
 #include "common_utilities/CommonDefinitions.h"
 #include "common_utilities/timer.hpp"
 #include <ecl/geometry.hpp>
@@ -30,7 +30,7 @@ public:
         trajectory_srv = n.advertiseService("/roboy/trajectory_" + joint_name,
                                             &VelocityController::trajectoryPreprocess, this);
         steer_sub = n.subscribe("/roboy/steer", 1000, &VelocityController::steer, this);
-        status_pub = n.advertise<common_utilities::ControllerState>("/roboy/status_" + joint_name, 1000);
+        status_pub = n.advertise<roboy_communication_middleware::ControllerState>("/roboy/status_" + joint_name, 1000);
         trajectory_pub = n.advertise<std_msgs::Float32>("/roboy/trajectory_" + joint_name + "/vel", 1000);
         myStatus = ControllerState::INITIALIZED;
         // wait for GUI subscriber
@@ -60,7 +60,7 @@ public:
         }
     }
 
-    void steer(const common_utilities::Steer::ConstPtr &msg) {
+    void steer(const roboy_communication_middleware::Steer::ConstPtr &msg) {
         switch (msg->steeringCommand) {
             case STOP_TRAJECTORY:
                 dt = 0;
@@ -104,10 +104,10 @@ private:
     int8_t steered = STOP_TRAJECTORY;
     std_msgs::Float32 vel_msg;
     float dt = 0;
-    common_utilities::ControllerState statusMsg;
+    roboy_communication_middleware::ControllerState statusMsg;
 
-    bool trajectoryPreprocess(common_utilities::SetTrajectory::Request &req,
-                              common_utilities::SetTrajectory::Response &res) {
+    bool trajectoryPreprocess(roboy_communication_middleware::SetTrajectory::Request &req,
+                              roboy_communication_middleware::SetTrajectory::Response &res) {
         steered = STOP_TRAJECTORY;
         myStatus = PREPROCESS_TRAJECTORY;
         statusMsg.state = myStatus;
@@ -146,4 +146,3 @@ private:
     }
 };
 PLUGINLIB_EXPORT_CLASS(VelocityController, controller_interface::ControllerBase);
-

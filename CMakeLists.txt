@@ -9,8 +9,8 @@ SET(CMAKE_BUILD_TYPE Debug)
 # Dependencies
 #==============================================================================
 find_package(catkin REQUIRED COMPONENTS roscpp controller_interface hardware_interface pluginlib
-        common_utilities ecl_geometry)
-catkin_package(CATKIN_DEPENDS message_runtime common_utilities)
+        roboy_communication_middleware ecl_geometry)
+catkin_package(CATKIN_DEPENDS message_runtime roboy_communication_middleware)
 
 include_directories(
         include
@@ -21,19 +21,19 @@ include_directories(
 # Libraries
 #==============================================================================
 add_library(PositionController src/PositionController.cpp)
-add_dependencies(PositionController common_utilities_generate_messages_cpp)
+add_dependencies(PositionController roboy_communication_generate_messages_cpp)
 target_link_libraries(PositionController ${catkin_LIBRARIES})
 
 add_library(VelocityController src/VelocityController.cpp)
-add_dependencies(VelocityController common_utilities_generate_messages_cpp)
+add_dependencies(VelocityController roboy_communication_generate_messages_cpp)
 target_link_libraries(VelocityController ${catkin_LIBRARIES})
 
 add_library(ForceController src/ForceController.cpp)
-add_dependencies(ForceController common_utilities_generate_messages_cpp)
+add_dependencies(ForceController roboy_communication_generate_messages_cpp)
 target_link_libraries(ForceController ${catkin_LIBRARIES})
 
 add_library(MuscleActivityController src/MuscleActivityController.cpp)
-add_dependencies(MuscleActivityController common_utilities_generate_messages_cpp)
+add_dependencies(MuscleActivityController roboy_communication_generate_messages_cpp)
 target_link_libraries(MuscleActivityController ${catkin_LIBRARIES})
 #==============================================================================
 # Installation

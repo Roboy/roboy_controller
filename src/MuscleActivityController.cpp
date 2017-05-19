@@ -16,7 +16,7 @@ bool MuscleActivityController::init(hardware_interface::EffortJointInterface *hw
     joint = hw->getHandle(joint_name);  // throws on failure
     setPoint_sub = n.subscribe("/roboy/setPoint_" + joint_name, 1, &MuscleActivityController::newSetpoint, this);
     steer_sub = n.subscribe("/roboy/steer", 1000, &MuscleActivityController::steer, this);
-    status_pub = n.advertise<common_utilities::ControllerState>("/roboy/status_" + joint_name, 1000);
+    status_pub = n.advertise<roboy_communication_middleware::ControllerState>("/roboy/status_" + joint_name, 1000);
     setPoint_pub = n.advertise<std_msgs::Float32>("/roboy/setPoint_" + joint_name + "/eff", 1000);
     myStatus = ControllerState::INITIALIZED;
     statusMsg.state = myStatus;
@@ -33,7 +33,7 @@ void MuscleActivityController::update(const ros::Time &time, const ros::Duration
     }
 }
 
-void MuscleActivityController::steer(const common_utilities::Steer::ConstPtr &msg) {
+void MuscleActivityController::steer(const roboy_communication_middleware::Steer::ConstPtr &msg) {
     switch (msg->steeringCommand) {
         case STOP_TRAJECTORY:
             dt = 0;
