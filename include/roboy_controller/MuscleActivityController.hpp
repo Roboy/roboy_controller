@@ -2,9 +2,10 @@
 #include <hardware_interface/joint_command_interface.h>
 #include <pluginlib/class_list_macros.h>
 #include <std_msgs/Float32.h>
-#include "roboy_communication_middleware/ControllerState.h"
-#include "roboy_communication_middleware/Steer.h"
-#include "common_utilities/CommonDefinitions.h"
+#include <roboy_communication_middleware/ControllerState.h>
+#include <roboy_communication_middleware/Steer.h>
+#include <roboy_communication_middleware/SetTrajectory.h>
+#include <common_utilities/CommonDefinitions.h>
 #include <mutex>
 
 using namespace std;
