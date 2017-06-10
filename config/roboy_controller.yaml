@@ -1,121 +1,142 @@
 # This file contains parameter for several test controllers, which will be uploaded to the ros parameter server via
 # the roslaunch file
+
+danceMotors: [1,3,4,6,8,10,11,12]
+
 motor0:
   id: 0
   joint_name: motor0
-  type: roboy_controller/ForceController
+  type: roboy_controller/JointAngleController
 
 motor1:
   id: 1
+  joint: 1
+  extendor: 0
   joint_name: motor1
-  type: roboy_controller/PositionController
+  type: roboy_controller/JointAngleController
 
 motor2:
   id: 2
   joint_name: motor2
-  type: roboy_controller/PositionController
+  type: roboy_controller/JointAngleController
 
 motor3:
   id: 3
+  joint: 1
+  extendor: 1
   joint_name: motor3
-  type: roboy_controller/PositionController
+  type: roboy_controller/JointAngleController
 
 motor4:
   id: 4
+  joint: 0
+  extendor: 0
   joint_name: motor4
-  type: roboy_controller/PositionController
+  type: roboy_controller/JointAngleController
 
 motor5:
   id: 5
   joint_name: motor5
-  type: roboy_controller/PositionController
+  type: roboy_controller/JointAngleController
 
 motor6:
   id: 6
+  joint: 0
+  extendor: 1
   joint_name: motor6
-  type: roboy_controller/PositionController
+  type: roboy_controller/JointAngleController
 
 motor7:
   id: 7
   joint_name: motor7
-  type: roboy_controller/PositionController
+  type: roboy_controller/JointAngleController
 
 motor8:
   id: 8
+  joint: 3
+  extendor: 1
   joint_name: motor8
-  type: roboy_controller/PositionController
+  type: roboy_controller/JointAngleController
 
 motor9:
   id: 9
   joint_name: motor9
-  type: roboy_controller/PositionController
+  type: roboy_controller/JointAngleController
 
 motor10:
   id: 10
+  joint: 2
+  extendor: 1
   joint_name: motor10
-  type: roboy_controller/PositionController
+  type: roboy_controller/JointAngleController
 
 motor11:
   id: 11
+  joint: 3
+  extendor: 0
   joint_name: motor11
-  type: roboy_controller/PositionController
+  type: roboy_controller/JointAngleController
 
 motor12:
   id: 12
+  joint: 2
+  extendor: 0
   joint_name: motor12
-  type: roboy_controller/PositionController
+  type: roboy_controller/JointAngleController
 
 motor13:
   id: 13
+  joint: 3
+  extendor: 0
   joint_name: motor13
-  type: roboy_controller/PositionController
+  type: roboy_controller/JointAngleController
 
 motor14:
   id: 14
   joint_name: motor14
-  type: roboy_controller/PositionController
+  type: roboy_controller/JointAngleController
 
 motor15:
   id: 15
   joint_name: motor15
-  type: roboy_controller/PositionController
+  type: roboy_controller/JointAngleController
 
 motor16:
   id: 16
   joint_name: motor16
-  type: roboy_controller/PositionController
+  type: roboy_controller/JointAngleController
 
 motor17:
   id: 17
   joint_name: motor17
-  type: roboy_controller/PositionController
+  type: roboy_controller/JointAngleController
 
 motor18:
   id: 18
   joint_name: motor18
-  type: roboy_controller/PositionController
+  type: roboy_controller/JointAngleController
 
 motor19:
   id: 19
   joint_name: motor19
-  type: roboy_controller/PositionController
+  type: roboy_controller/JointAngleController
 
 motor20:
   id: 20
   joint_name: motor20
-  type: roboy_controller/PositionController
+  type: roboy_controller/JointAngleController
 
 motor21:
   id: 21
   joint_name: motor21
-  type: roboy_controller/PositionController
+  type: roboy_controller/JointAngleController
 
 motor22:
   id: 22
   joint_name: motor22
-  type: roboy_controller/PositionController
+  type: roboy_controller/JointAngleController
 
 motor23:
   id: 23
   joint_name: motor23
-  type: roboy_controller/PositionController
+  type: roboy_controller/JointAngleController

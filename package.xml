@@ -21,5 +21,6 @@
         <controller_interface plugin="${prefix}/VelocityController_plugin.xml"/>
         <controller_interface plugin="${prefix}/ForceController_plugin.xml"/>
         <controller_interface plugin="${prefix}/MuscleActivityController_plugin.xml"/>
+        <controller_interface plugin="${prefix}/JointAngleController_plugin.xml"/>
     </export>
 </package>

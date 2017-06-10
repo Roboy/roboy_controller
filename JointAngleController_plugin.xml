@@ -1,0 +1,7 @@
+<library path="lib/libJointAngleController">
+  <class name="roboy_controller/JointAngleController" type="JointAngleController"
+base_class_type="controller_interface::ControllerBase">
+    <description>This is a dance controller plugin.</description>
+  </class>
+</library>
+
