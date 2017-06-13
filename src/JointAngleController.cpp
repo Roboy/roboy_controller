@@ -19,6 +19,8 @@ public:
     };
 
     bool init(hardware_interface::EffortJointInterface *hw, ros::NodeHandle &n) {
+        spinner  = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(1)) ;
+        spinner->start();
         // get joint name from the parameter server
         if (!n.getParam("joint_name", joint_name)) {
             ROS_ERROR("Could not find joint name");
@@ -28,7 +30,10 @@ public:
         n.getParam("extendor",extendor);
         ROS_INFO("JointAngleController %s for joint %d initialized", joint_name.c_str(), jointID);
         joint = hw->getHandle(joint_name);  // throws on failure
-        jointStatus_sub = n.subscribe("/roboy/middleware/JointStatus", 1, &JointAngleController::calculateForceForAngle, this);
+        jointStatus_sub = n.subscribe("/roboy/middleware/JointStatus", 1, &JointAngleController::calculateForceForAngleCB, this);
+        char str[100];
+        sprintf(str,"/roboy/middleware/joint%d", jointID);
+        jointAngle_sub = n.subscribe(str, 1, &JointAngleController::jointAngleSetpointCB, this);
         return true;
     }
 
@@ -37,7 +42,7 @@ public:
         joint.setCommand(setpoint);
     }
 
-    void calculateForceForAngle(const roboy_communication_middleware::JointStatus::ConstPtr &msg){
+    void calculateForceForAngleCB(const roboy_communication_middleware::JointStatus::ConstPtr &msg){
         lock_guard<mutex> lock(mux);
         error = setpoint - (msg->relAngles[jointID] / 4096.0 * 360.0);
         float pterm = Kp * error;
@@ -68,6 +73,13 @@ public:
         error_previous = error;
     }
 
+    void jointAngleSetpointCB(const std_msgs::Float32::ConstPtr& msg) {
+        if(setpoint>=0 && setpoint<=360)
+            setpoint = msg->data;
+        else
+            ROS_WARN("received invalid setpoint %f for %s", msg->data, joint_name.c_str());
+    }
+
     void starting(const ros::Time &time) { ROS_INFO("controller started for %s", joint_name.c_str()); }
 
     void stopping(const ros::Time &time) { ROS_INFO("controller stopped for %s", joint_name.c_str()); }
@@ -75,9 +87,11 @@ public:
 private:
     hardware_interface::JointHandle joint;
     double setpoint = 0;
+    float jointAngleOffset = 0;
     string joint_name;
     ros::NodeHandle n;
-    ros::Subscriber jointStatus_sub;
+    ros::Subscriber jointStatus_sub, jointAngle_sub;
+    boost::shared_ptr<ros::AsyncSpinner> spinner;
     int jointID = -1;
     int extendor;
     float Kp = 20, Ki = 0, Kd = 80;

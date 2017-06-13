@@ -9,10 +9,8 @@ SET(CMAKE_BUILD_TYPE Debug)
 # Dependencies
 #==============================================================================
 find_package(catkin REQUIRED COMPONENTS roscpp controller_interface hardware_interface pluginlib
-        roboy_communication_middleware ecl_geometry aruco_detect common_utilities)
+        roboy_communication_middleware ecl_geometry common_utilities)
 catkin_package(CATKIN_DEPENDS message_runtime roboy_communication_middleware common_utilities INCLUDE_DIRS include)
-
-find_package(librealsense REQUIRED)
 
 include_directories(
         include
@@ -45,12 +43,6 @@ add_dependencies(MuscleActivityController
 	roboy_communication_middleware_generate_messages_cpp
 )
 target_link_libraries(MuscleActivityController ${catkin_LIBRARIES})
-
-add_library(DanceController src/DanceController.cpp)
-add_dependencies(DanceController
-		roboy_communication_middleware_generate_messages_cpp
-		)
-target_link_libraries(DanceController ${catkin_LIBRARIES} ${librealsense_LIBRARIES} )
 
 add_library(JointAngleController src/JointAngleController.cpp)
 add_dependencies(JointAngleController

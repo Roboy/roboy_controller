@@ -1,0 +1,44 @@
+# config for PaBi dance
+
+danceMotors: [1,3,4,6,8,10,11,12]
+arucoIDS: [233,553,627,628,1010,153,292,62]
+
+motors0: [4, 6]
+
+motors1: [1, 3]
+
+motors2: [10, 12]
+
+motors3: [8, 11]
+
+motor4:
+  joint: 0
+  extendor: 0
+
+motor6:
+  joint: 0
+  extendor: 1
+
+motor1:
+  joint: 1
+  extendor: 0
+
+motor3:
+  joint: 1
+  extendor: 1
+
+motor10:
+  joint: 2
+  extendor: 0
+
+motor12:
+  joint: 2
+  extendor: 1
+
+motor8:
+  joint: 3
+  extendor: 0
+
+motor11:
+  joint: 3
+  extendor: 1
