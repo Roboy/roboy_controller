@@ -6,6 +6,8 @@
 #include <roboy_communication_middleware/Steer.h>
 #include <roboy_communication_middleware/SetTrajectory.h>
 #include <roboy_communication_middleware/JointStatus.h>
+#include <roboy_communication_middleware/JointAngle.h>
+#include <roboy_communication_middleware/JointCommand.h>
 #include <common_utilities/CommonDefinitions.h>
 #include <ecl/geometry.hpp>
 #include <mutex>
@@ -28,12 +30,15 @@ public:
         }
         n.getParam("joint",jointID);
         n.getParam("extendor",extendor);
-        ROS_INFO("JointAngleController %s for joint %d initialized", joint_name.c_str(), jointID);
+        n.getParam("init_angle",setPointAngle);
+        ROS_WARN("JointAngleController %s for joint %d as %s initialized", joint_name.c_str(), jointID,(extendor?"extendor":"flexor"));
         joint = hw->getHandle(joint_name);  // throws on failure
         jointStatus_sub = n.subscribe("/roboy/middleware/JointStatus", 1, &JointAngleController::calculateForceForAngleCB, this);
+        jointAngleOffset_sub = n.subscribe("/roboy/middleware/JointAngleOffset", 1, &JointAngleController::SetAngleOffsetCB, this);
         char str[100];
         sprintf(str,"/roboy/middleware/joint%d", jointID);
         jointAngle_sub = n.subscribe(str, 1, &JointAngleController::jointAngleSetpointCB, this);
+        jointCommand_sub = n.subscribe("/roboy/middleware/JointCommand", 1, &JointAngleController::jointCommandCB, this);
         return true;
     }
 
@@ -44,40 +49,52 @@ public:
 
     void calculateForceForAngleCB(const roboy_communication_middleware::JointStatus::ConstPtr &msg){
         lock_guard<mutex> lock(mux);
-        error = setpoint - (msg->relAngles[jointID] / 4096.0 * 360.0);
+        angle = (msg->relAngles[jointID]/4096.0f * 360.0f+jointAngleOffset);
+        error = setPointAngle - angle;
         float pterm = Kp * error;
-        float dterm = Ki * (error - error_previous);
-        integral += Ki  * error;
-        if(integral>=integral_max){
+        float dterm = Kd * (error - error_previous);
+        integral += Ki * error;
+        if (integral >= integral_max) {
             integral = integral_max;
-        }else if(integral<=integral_min){
+        } else if (integral <= integral_min) {
             integral = -integral_min;
         }
         float result = pterm + dterm + integral;
         if (result <= -smooth_distance) {
-            if(extendor)
+            if (extendor == 1)
                 setpoint = offset - result;
-            else
+            else if (extendor == 0)
                 setpoint = offset;
         } else if (result < smooth_distance) {
-            if(extendor)
-                setpoint = offset + powf(result-smooth_distance, 2.0f)/(4.0f * smooth_distance);
-            else
-                setpoint = offset + powf(result+smooth_distance, 2.0f)/(4.0f * smooth_distance);
+            if (extendor == 1)
+                setpoint = offset + powf(result - smooth_distance, 2.0f) / (4.0f * smooth_distance);
+            else if (extendor == 0)
+                setpoint = offset + powf(result + smooth_distance, 2.0f) / (4.0f * smooth_distance);
         } else {
-            if(extendor)
+            if (extendor == 1)
                 setpoint = offset;
-            else
+            else if (extendor == 0)
                 setpoint = offset + result;
         }
         error_previous = error;
+        ROS_INFO("joint%d %s setpoint %f angle %f error: %f", jointID, joint_name.c_str(), setpoint, angle, error);
     }
 
     void jointAngleSetpointCB(const std_msgs::Float32::ConstPtr& msg) {
-        if(setpoint>=0 && setpoint<=360)
-            setpoint = msg->data;
+        if(msg->data>=0 && msg->data<=360)
+            setPointAngle = msg->data;
         else
             ROS_WARN("received invalid setpoint %f for %s", msg->data, joint_name.c_str());
+    }
+
+    void jointCommandCB(const roboy_communication_middleware::JointCommand::ConstPtr& msg) {
+        ROS_INFO_THROTTLE(5,"%s receiving angle command %f", joint_name.c_str(), msg->dq[jointID] );
+        setPointAngle = angle + msg->dq[jointID];
+    }
+
+    void SetAngleOffsetCB(const roboy_communication_middleware::JointAngle::ConstPtr& msg) {
+        ROS_WARN("%s received new JointAngle offset %f", joint_name.c_str(), msg->angle[jointID]);
+        jointAngleOffset = msg->angle[jointID];
     }
 
     void starting(const ros::Time &time) { ROS_INFO("controller started for %s", joint_name.c_str()); }
@@ -87,10 +104,10 @@ public:
 private:
     hardware_interface::JointHandle joint;
     double setpoint = 0;
-    float jointAngleOffset = 0;
+    float jointAngleOffset = 0, setPointAngle = 40, angle = 0;
     string joint_name;
     ros::NodeHandle n;
-    ros::Subscriber jointStatus_sub, jointAngle_sub;
+    ros::Subscriber jointStatus_sub, jointAngle_sub, jointAngleOffset_sub, jointCommand_sub;
     boost::shared_ptr<ros::AsyncSpinner> spinner;
     int jointID = -1;
     int extendor;
