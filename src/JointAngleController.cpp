@@ -88,8 +88,8 @@ public:
     }
 
     void jointCommandCB(const roboy_communication_middleware::JointCommand::ConstPtr& msg) {
-        ROS_INFO_THROTTLE(5,"%s receiving angle command %f", joint_name.c_str(), msg->dq[jointID] );
-        setPointAngle = angle + msg->dq[jointID];
+        ROS_INFO_THROTTLE(5,"%s receiving angle command %f", joint_name.c_str(), msg->angle[jointID] );
+        setPointAngle = msg->angle[jointID];
     }
 
     void SetAngleOffsetCB(const roboy_communication_middleware::JointAngle::ConstPtr& msg) {
