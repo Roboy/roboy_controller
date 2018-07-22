@@ -97,7 +97,7 @@ void Roboy::write() {
     ROS_DEBUG("write");
 }
 
-void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) {
+void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager, SimulationControl &sim_control) {
     cm = ControllerManager;
 
     // Control loop
@@ -106,9 +106,9 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
     currentState = WaitForInitialize;
 
     while (ros::ok()) {
+        ROS_INFO_THROTTLE(5, "%s", state_strings[currentState].c_str());
         switch (currentState) {
             case WaitForInitialize: {
-                ROS_INFO_THROTTLE(5, "%s", state_strings[WaitForInitialize].c_str());
                 if (!initialized) {
                     // idle
                     continue;
@@ -118,8 +118,7 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
                     break;
                 }
             }
-            case Controlloop: {
-
+            case Control: {
                 const ros::Time time = ros::Time::now();
                 const ros::Duration period = time - prev_time;
 
@@ -127,6 +126,10 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
                 write();
 
                 prev_time = time;
+                break;
+            }
+            case Simulate: {
+                sim_control.simulate();
                 break;
             }
         }
@@ -171,10 +174,13 @@ ActionState Roboy::NextState(ActionState s) {
     ActionState newstate;
     switch (s) {
         case WaitForInitialize:
-            newstate = Controlloop;
+            newstate = Control;
             break;
-        case Controlloop:
-            newstate = Controlloop;
+        case Control:
+            newstate = Simulate;
+            break;
+        case Simulate:
+            newstate = Control;
             break;
     }
     return newstate;
@@ -210,11 +216,6 @@ int main(int argc, char *argv[]) {
     gazebo::sensors::run_threads();
 
     physics::ModelPtr model = sim_control.loadModel(world, argv[1]);
-    while(ros::ok()){
-        sim_control.simulate(world);
-    }
-
-    gazebo::shutdown();
 
     Roboy robot(argc, argv);
 
@@ -225,11 +226,13 @@ int main(int argc, char *argv[]) {
 
     ROS_INFO("STARTING ROBOY MAIN LOOP...");
 
-    robot.main_loop(&cm);
+    robot.main_loop(&cm,sim_control);
+
+    ROS_INFO("TERMINATING...");
 
     update_thread.join();
 
-    ROS_INFO("TERMINATING...");
+    gazebo::shutdown();
 
     return 0;
 }

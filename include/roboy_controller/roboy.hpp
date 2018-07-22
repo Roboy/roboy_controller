@@ -39,11 +39,8 @@ using namespace Eigen;
 //! enum for state machine
 typedef enum {
     WaitForInitialize,
-    LoadControllers,
-    Controlloop,
-    ResetPowerlinkStack,
-    Recording,
-    Dancing
+    Control,
+    Simulate
 } ActionState;
 
 class Roboy : public hardware_interface::RobotHW {
@@ -76,7 +73,7 @@ public:
     /**
      * This is the main loop
      */
-    void main_loop(controller_manager::ControllerManager *ControllerManager);
+    void main_loop(controller_manager::ControllerManager *ControllerManager, SimulationControl &sim_control);
 //    /**
 //     * Handles signals and shuts down everything
 //     * @param sig signals
@@ -155,10 +152,8 @@ private:
     //! state strings describing each state
     std::map<ActionState, std::string> state_strings = {
             {WaitForInitialize, "Waiting for initialization of controllers"},
-            {Controlloop,       "Control loop"},
-            {Recording,         "Recording"},
-            {ResetPowerlinkStack,         "Resetting Powerlink Stack"},
-            {Dancing,         "Look at me, I'm dancing"}
+            {Control,       "Control loop"},
+            {Simulate,         "Simulating"}
     };
 };
 
