@@ -9,6 +9,7 @@
 #include "roboy_communication_middleware/ArucoPose.h"
 #include "geometry_msgs/Pose.h"
 #include <roboy_simulation/simulationControl.hpp>
+#include <roboy_simulation/CASPR.hpp>
 
 // ros
 #include <ros/ros.h>
@@ -48,7 +49,7 @@ public:
     /**
      * Constructor
      */
-    Roboy(int argc, char* argv[]);
+    Roboy();
 
     /**
      * Destructor
@@ -73,7 +74,7 @@ public:
     /**
      * This is the main loop
      */
-    void main_loop(controller_manager::ControllerManager *ControllerManager, SimulationControl &sim_control);
+    void main_loop(controller_manager::ControllerManager *ControllerManager);
 //    /**
 //     * Handles signals and shuts down everything
 //     * @param sig signals
@@ -134,6 +135,8 @@ private:
     map<int, Vector3f> arucoMarkerPosition;
     ros::ServiceServer init_srv, record_srv, resetSpring_srv;
     ros::Publisher recordResult_pub, jointAnglesOffset_pub, hipCenter_pub;
+
+    vector<CASPRptr> caspr;
 
     roboy_communication_middleware::RoboyState roboyStateMsg;
 

@@ -19,6 +19,7 @@ target_acc: [0,0,0,0,0,0]
 planner: "KPIECEkConfigDefault"
 planning_group: "hand_left"
 log: 0
+end_effectors: ["hand_left"]
 
 motor0:
   id: 0

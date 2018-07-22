@@ -2,7 +2,7 @@
 
 bool Roboy::shutdown_flag = false;
 
-Roboy::Roboy(int argc, char *argv[]) {
+Roboy::Roboy() {
     nh = ros::NodeHandlePtr(new ros::NodeHandle);
     if (!ros::isInitialized()) {
         int argc = 0;
@@ -22,8 +22,19 @@ Roboy::Roboy(int argc, char *argv[]) {
     spinner = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(0));
     spinner->start();
 
-    bool initializeJointAngles = true;
+    string sdf;
+    nh->getParam("robot_description_sdf", sdf);
 
+    ROS_INFO("found robot_description_sdf: \n\n%s\n\n", sdf.c_str());
+
+    vector<string> endeffectors;
+    nh->getParam("end_effectors", endeffectors);
+
+    vector<MuscInfo> muscInfo;
+    CASPR::parseSDFusion(sdf,muscInfo);
+
+    for(const string &endeffector:endeffectors)
+        caspr.push_back(boost::shared_ptr<CASPR>(new CASPR(endeffector,muscInfo)));
 }
 
 Roboy::~Roboy() {
@@ -97,7 +108,7 @@ void Roboy::write() {
     ROS_DEBUG("write");
 }
 
-void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager, SimulationControl &sim_control) {
+void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) {
     cm = ControllerManager;
 
     // Control loop
@@ -129,7 +140,6 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager, 
                 break;
             }
             case Simulate: {
-                sim_control.simulate();
                 break;
             }
         }
@@ -200,24 +210,7 @@ void update(controller_manager::ControllerManager *cm) {
 int main(int argc, char *argv[]) {
     ros::init(argc, argv, "roboy", ros::init_options::NoRosout);
 
-    if(argc!=2)
-        ROS_FATAL("please supply model name, eg roslaunch roboy_controller roboy.launch model_name:=roboy_xylophone_left_arm");
-
-    // setup Gazebo server
-    if (gazebo::setupServer()) {
-        std::cout << "Gazebo server setup successful\n";
-    } else {
-        std::cout << "Gazebo server setup failed!\n";
-    }
-
-    SimulationControl &sim_control = SimulationControl::getInstance();
-    physics::WorldPtr world = sim_control.loadWorld("worlds/empty.world");
-    gazebo::sensors::run_once(true);
-    gazebo::sensors::run_threads();
-
-    physics::ModelPtr model = sim_control.loadModel(world, argv[1]);
-
-    Roboy robot(argc, argv);
+    Roboy robot;
 
     controller_manager::ControllerManager cm(&robot);
 
@@ -226,7 +219,7 @@ int main(int argc, char *argv[]) {
 
     ROS_INFO("STARTING ROBOY MAIN LOOP...");
 
-    robot.main_loop(&cm,sim_control);
+    robot.main_loop(&cm);
 
     ROS_INFO("TERMINATING...");
 
