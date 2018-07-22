@@ -9,8 +9,13 @@ SET(CMAKE_BUILD_TYPE Debug)
 # Dependencies
 #==============================================================================
 find_package(catkin REQUIRED COMPONENTS roscpp controller_interface hardware_interface pluginlib
-        roboy_communication_middleware ecl_geometry common_utilities)
-catkin_package(CATKIN_DEPENDS message_runtime roboy_communication_middleware common_utilities INCLUDE_DIRS include)
+        roboy_communication_middleware ecl_geometry common_utilities controller_manager roboy_simulation)
+catkin_package(CATKIN_DEPENDS message_runtime roboy_communication_middleware common_utilities roboy_simulation INCLUDE_DIRS include)
+
+find_package(gazebo REQUIRED)
+include_directories(${GAZEBO_INCLUDE_DIRS})
+link_directories(${GAZEBO_LIBRARY_DIRS})
+message(STATUS ${GAZEBO_INCLUDE_DIRS})
 
 include_directories(
         include
@@ -49,6 +54,16 @@ add_dependencies(JointAngleController
 		roboy_communication_middleware_generate_messages_cpp
 		)
 target_link_libraries(JointAngleController ${catkin_LIBRARIES} ${librealsense_LIBRARIES} )
+
+add_library(MuscController src/MuscController.cpp)
+add_dependencies(MuscController
+		roboy_communication_middleware_generate_messages_cpp
+		)
+target_link_libraries(MuscController ${catkin_LIBRARIES})
+
+add_executable(roboy src/roboy.cpp include/roboy_controller/roboy.hpp)
+add_dependencies(roboy roboy_communication_middleware_generate_messages_cpp )
+target_link_libraries(roboy ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})
 #==============================================================================
 # Installation
 #==============================================================================
@@ -57,6 +72,7 @@ install(TARGETS
         VelocityController
         ForceController
         MuscleActivityController
+        MuscController
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         )
 
@@ -66,6 +82,7 @@ install(FILES
         VelocityController_plugin.xml
         ForceController_plugin.xml
         MuscleActivityController_plugin.xml
+        MuscController_plugin.xml
         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
         )
 

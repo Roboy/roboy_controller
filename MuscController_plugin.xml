@@ -1,0 +1,7 @@
+<library path="lib/libMuscController">
+  <class name="roboy_controller/MuscController" type="MuscController"
+base_class_type="controller_interface::ControllerBase">
+    <description>This is a position controller plugin.</description>
+  </class>
+</library>
+

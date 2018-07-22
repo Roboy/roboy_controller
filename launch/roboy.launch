@@ -1,0 +1,25 @@
+<launch>
+    <arg name="model_name" default="roboy_xylophone_left_arm"/>
+
+    <param name="planning_plugin" type="string" value="ompl_interface/OMPLPlanner"/>
+
+    <node pkg="tf" type="static_transform_publisher" name="static_map" args="0 0 0 0 0 0 1  /torso /map  100"/>
+
+    <include file="$(optenv CONFIG_PATH /home/letrend/workspace/roboy_middleware/src/roboy_moveit_configs)/$(arg model_name)_moveit_config/launch/planning_context.launch">
+        <arg name="load_robot_description" value="true"/>
+    </include>
+
+    <!-- Load the parameters to the parameter server from the yaml file-->
+    <rosparam file="$(find roboy_controller)/config/roboy_controller.yaml" command="load"/>
+    <node name="roboy_controller"
+          pkg="roboy_controller"
+          type="roboy"
+          respawn="false"
+          output="screen"
+          args="$(arg model_name)"
+    />
+</launch>
+        <!--launch-prefix="gdb -ex run"-->
+        <!-- FOR DEBUGGING USE THIS launch-prefix="xterm -e gdb -se devel/lib/myo_master/multiJoint" FOR VALGRIND USE THIS launch-prefix="valgrind -log-file=/home/letrend/workspace/ros_hierarchy/valgrind.log -leak-check=full"-->
+
+        <!-- args="-c /home/roboy/workspace/roboy-ros-control/src/roboy_powerlink/powerlink/output/mnobd.cdc"-->
