@@ -6,7 +6,7 @@ segment: -1
 target_ee_pos: [0,0,0]
 target_ee_pos: [0.0,0.0,0.0,1]
 ee_target_pos_offset: [0.0,0.0,0.0]
-controller: 1
+controller: 3
 Kp_controller: 1000
 Kd_controller: 100
 max_force: 500
@@ -19,7 +19,7 @@ target_acc: [0,0,0,0,0,0]
 planner: "KPIECEkConfigDefault"
 planning_group: "hand_left"
 log: 0
-end_effectors: ["hand_left"]
+end_effectors: ["link5"]
 
 motor0:
   id: 0

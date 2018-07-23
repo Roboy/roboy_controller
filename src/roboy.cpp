@@ -17,7 +17,7 @@ Roboy::Roboy() {
     vel = new double[NUMBER_OF_MOTORS_PER_FPGA];
     eff = new double[NUMBER_OF_MOTORS_PER_FPGA];
 
-    motorStatus_sub = nh->subscribe("/roboy/middleware/MotorStatus", 1, &Roboy::MotorStatus, this);
+//    motorStatus_sub = nh->subscribe("/roboy/middleware/MotorStatus", 1, &Roboy::MotorStatus, this);
 
     spinner = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(0));
     spinner->start();
@@ -25,19 +25,24 @@ Roboy::Roboy() {
     string sdf;
     nh->getParam("robot_description_sdf", sdf);
 
-    ROS_INFO("found robot_description_sdf: \n\n%s\n\n", sdf.c_str());
+    ROS_DEBUG("found robot_description_sdf: \n\n%s\n\n", sdf.c_str());
 
     vector<string> endeffectors;
     nh->getParam("end_effectors", endeffectors);
 
     vector<MuscInfo> muscInfo;
-    CASPR::parseSDFusion(sdf,muscInfo);
+    if(!CASPR::parseSDFusion(sdf,muscInfo))
+        ROS_FATAL("error parsing sdf");
 
     for(const string &endeffector:endeffectors)
         caspr.push_back(boost::shared_ptr<CASPR>(new CASPR(endeffector,muscInfo)));
 }
 
 Roboy::~Roboy() {
+    delete []cmd;
+    delete []pos;
+    delete []vel;
+    delete []eff;
 }
 
 void Roboy::MotorStatus(const roboy_communication_middleware::MotorStatus::ConstPtr &msg) {
@@ -101,11 +106,22 @@ bool Roboy::initializeControllers(roboy_communication_middleware::Initialize::Re
 
 void Roboy::read() {
     ROS_DEBUG("read");
-    // nothing to be done here, since the motor status comes via ros topic /roboy/MotorStatus
+    for(auto casp:caspr){
+        casp->update();
+    }
 }
 
 void Roboy::write() {
     ROS_DEBUG("write");
+    vector<double> target_pos, target_vel;
+    nh->getParam("target_pos",target_pos);
+    nh->getParam("target_vel",target_vel);
+    double Kp, Kd;
+    nh->getParam("Kp_controller",Kp);
+    nh->getParam("Kd_controller",Kd);
+    for(auto casp:caspr){
+        casp->updateController(target_pos, target_vel,Kp,Kd);
+    }
 }
 
 void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) {
@@ -114,7 +130,7 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
     // Control loop
     ros::Time prev_time = ros::Time::now();
 
-    currentState = WaitForInitialize;
+    currentState = Control;
 
     while (ros::ok()) {
         ROS_INFO_THROTTLE(5, "%s", state_strings[currentState].c_str());
@@ -187,7 +203,7 @@ ActionState Roboy::NextState(ActionState s) {
             newstate = Control;
             break;
         case Control:
-            newstate = Simulate;
+            newstate = Control;
             break;
         case Simulate:
             newstate = Control;
