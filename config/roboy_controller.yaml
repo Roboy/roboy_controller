@@ -20,6 +20,9 @@ planner: "KPIECEkConfigDefault"
 planning_group: "hand_left"
 log: 0
 end_effectors: ["link5"]
+link5:
+  target_pos: [0,0,0,0,0,0]
+  target_vel: [0,0,0,0,0,0]
 
 motor0:
   id: 0

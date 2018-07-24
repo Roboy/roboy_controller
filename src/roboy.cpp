@@ -34,8 +34,11 @@ Roboy::Roboy() {
     if(!CASPR::parseSDFusion(sdf,muscInfo))
         ROS_FATAL("error parsing sdf");
 
-    for(const string &endeffector:endeffectors)
-        caspr.push_back(boost::shared_ptr<CASPR>(new CASPR(endeffector,muscInfo)));
+    for(const string &endeffector:endeffectors) {
+        caspr.push_back(boost::shared_ptr<CASPR>(new CASPR(endeffector, muscInfo)));
+        target_pos[endeffector] = &caspr.back()->target_pos;
+        target_vel[endeffector] = &caspr.back()->target_vel;
+    }
 }
 
 Roboy::~Roboy() {
@@ -113,14 +116,10 @@ void Roboy::read() {
 
 void Roboy::write() {
     ROS_DEBUG("write");
-    vector<double> target_pos, target_vel;
-    nh->getParam("target_pos",target_pos);
-    nh->getParam("target_vel",target_vel);
-    double Kp, Kd;
-    nh->getParam("Kp_controller",Kp);
-    nh->getParam("Kd_controller",Kd);
     for(auto casp:caspr){
-        casp->updateController(target_pos, target_vel,Kp,Kd);
+        casp->updateController(*target_pos[casp->end_effektor_name],
+                               *target_vel[casp->end_effektor_name],
+                               Kp[casp->end_effektor_name],Kd[casp->end_effektor_name]);
     }
 }
 
@@ -130,7 +129,7 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
     // Control loop
     ros::Time prev_time = ros::Time::now();
 
-    currentState = Control;
+    currentState = SetpointControl;
 
     while (ros::ok()) {
         ROS_INFO_THROTTLE(5, "%s", state_strings[currentState].c_str());
@@ -145,9 +144,14 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
                     break;
                 }
             }
-            case Control: {
+            case SetpointControl: {
                 const ros::Time time = ros::Time::now();
                 const ros::Duration period = time - prev_time;
+
+//                for(auto casp:caspr){
+//                    nh->getParam(casp->end_effektor_name + "/target_pos", casp->target_pos);
+//                    nh->getParam(casp->end_effektor_name + "/target_vel", casp->target_vel);
+//                }
 
                 read();
                 write();
@@ -155,7 +159,31 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
                 prev_time = time;
                 break;
             }
-            case Simulate: {
+            case TrajectoryControl: {
+                read();
+                for(auto casp:caspr){
+                    if(casp->new_trajectory){
+                        casp->trajectory_index = 0;
+                        casp->new_trajectory = false;
+                    }
+
+                    if (casp->trajectory_index >= casp->trajectory.joint_trajectory.points.size()) {
+                        *target_pos[casp->end_effektor_name] = casp->trajectory.joint_trajectory.points[casp->trajectory_index].positions;
+                        *target_vel[casp->end_effektor_name] = casp->trajectory.joint_trajectory.points[casp->trajectory_index].velocities;
+                    }
+
+                    double diffnorm = 0;
+                    for (int i = 0; i < target_pos.size(); i++)
+                        diffnorm += pow(target_pos[casp->end_effektor_name]->at(i) - casp->joint_pos[i], 2.0);
+                    diffnorm = sqrt(diffnorm);
+                    if (diffnorm < 0.1) {
+                        if (casp->trajectory_index < casp->trajectory.joint_trajectory.points.size()) {
+                            ROS_INFO_STREAM_THROTTLE(3,casp->end_effektor_name << " trajectory setpoint #" << casp->trajectory_index << " reached with error " << diffnorm);
+                            casp->trajectory_index++;
+                        }
+                    }
+                }
+                write();
                 break;
             }
         }
@@ -200,13 +228,13 @@ ActionState Roboy::NextState(ActionState s) {
     ActionState newstate;
     switch (s) {
         case WaitForInitialize:
-            newstate = Control;
+            newstate = SetpointControl;
             break;
-        case Control:
-            newstate = Control;
+        case SetpointControl:
+            newstate = SetpointControl;
             break;
-        case Simulate:
-            newstate = Control;
+        case TrajectoryControl:
+            newstate = TrajectoryControl;
             break;
     }
     return newstate;

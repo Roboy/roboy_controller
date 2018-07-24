@@ -40,8 +40,8 @@ using namespace Eigen;
 //! enum for state machine
 typedef enum {
     WaitForInitialize,
-    Control,
-    Simulate
+    SetpointControl,
+    TrajectoryControl
 } ActionState;
 
 class Roboy : public hardware_interface::RobotHW {
@@ -57,11 +57,6 @@ public:
     ~Roboy();
 
     /**
-     * This function initialises the requested motors
-     */
-    bool initializeControllers(roboy_communication_middleware::Initialize::Request &req,
-                               roboy_communication_middleware::Initialize::Response &res);
-    /**
 	 * Read from hardware
 	 */
     void read();
@@ -75,12 +70,6 @@ public:
      * This is the main loop
      */
     void main_loop(controller_manager::ControllerManager *ControllerManager);
-//    /**
-//     * Handles signals and shuts down everything
-//     * @param sig signals
-//     */
-//    static void sigintHandler(int sig);
-
 private:
     /**
      * Subscriber callback for motor status
@@ -115,6 +104,15 @@ private:
 	 */
     bool stopControllers(vector<string> controllers);
 
+    /**
+     * This function initialises the requested motors
+     */
+    bool initializeControllers(roboy_communication_middleware::Initialize::Request &req,
+                               roboy_communication_middleware::Initialize::Response &res);
+
+    bool updateTarget(roboy_communication_middleware::Initialize::Request &req,
+                      roboy_communication_middleware::Initialize::Response &res);
+
     ros::NodeHandlePtr nh;
     double *cmd;
     double *pos;
@@ -131,11 +129,10 @@ private:
     hardware_interface::ActuatorCommandInterface act_command_interface;
 
     controller_manager::ControllerManager *cm = nullptr;
-    ros::Subscriber steer_recording_sub, arucoMarker_sub;
-    map<int, Vector3f> arucoMarkerPosition;
     ros::ServiceServer init_srv, record_srv, resetSpring_srv;
-    ros::Publisher recordResult_pub, jointAnglesOffset_pub, hipCenter_pub;
 
+    map<string,double> Kp, Kd;
+    map<string,vector<double>*> target_pos, target_vel;
     vector<CASPRptr> caspr;
 
     roboy_communication_middleware::RoboyState roboyStateMsg;
@@ -155,8 +152,8 @@ private:
     //! state strings describing each state
     std::map<ActionState, std::string> state_strings = {
             {WaitForInitialize, "Waiting for initialization of controllers"},
-            {Control,       "Control loop"},
-            {Simulate,         "Simulating"}
+            {SetpointControl,       "Setpoint Control"},
+            {TrajectoryControl,         "Trajectory Control"}
     };
 };
 
