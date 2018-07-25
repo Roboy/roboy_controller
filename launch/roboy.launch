@@ -34,12 +34,12 @@
     <!--</include>-->
 
     <!--load robot description onto parameter server-->
-    <include file="$(optenv CONFIG_PATH /home/roboy/workspace/roboy_middleware/src/roboy_moveit_configs)/$(arg model_name)_moveit_config/launch/planning_context.launch">
+    <include file="$(optenv CONFIG_PATH /home/letrend/workspace/roboy_middleware/src/roboy_moveit_configs)/$(arg model_name)_moveit_config/launch/planning_context.launch">
         <arg name="load_robot_description" value="true"/>
     </include>
 
     <!--start path planning-->
-    <include file="$(optenv CONFIG_PATH /home/roboy/workspace/roboy_middleware/src/roboy_moveit_configs)/$(arg model_name)_moveit_config/launch/move_group.launch">
+    <include file="$(optenv CONFIG_PATH /home/letrend/workspace/roboy_middleware/src/roboy_moveit_configs)/$(arg model_name)_moveit_config/launch/move_group.launch">
         <arg name="allow_trajectory_execution" value="false"/>
     </include>
 
