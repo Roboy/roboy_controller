@@ -7,9 +7,9 @@ target_ee_pos: [0,0,0]
 target_ee_pos: [0.0,0.0,0.0,1]
 ee_target_pos_offset: [0.0,0.0,0.0]
 controller: 3
-Kp_controller: 1000
-Kd_controller: 100
-max_force: 500
+Kp_controller: 100
+Kd_controller: 10
+max_force: 10000
 min_force: 0
 qp_print_level: 0
 qp_working_sets: 1000
@@ -19,7 +19,7 @@ target_acc: [0,0,0,0,0,0]
 planner: "KPIECEkConfigDefault"
 planning_group: "hand_left"
 log: 0
-end_effectors: ["hand_left","torso"]
+end_effectors: ["link5"]
 hand_left:
   target_pos: [0,0,0,0,0,0]
   target_vel: [0,0,0,0,0,0]

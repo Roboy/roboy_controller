@@ -43,7 +43,7 @@
         <arg name="allow_trajectory_execution" value="false"/>
     </include>
 
-    <node pkg="tf" type="static_transform_publisher" name="static_map" args="0 0 0 0 0 0 1  /base /map  100"/>
+    <node pkg="tf" type="static_transform_publisher" name="static_map" args="0 0 0 0 0 0 1  /world /map  100"/>
 
     <param name="robot_description_sdf" textfile="$(find roboy_models)/$(arg model_name)/model.sdf" />
 
