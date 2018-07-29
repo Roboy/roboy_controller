@@ -117,9 +117,11 @@ void Roboy::read() {
 void Roboy::write() {
     ROS_DEBUG("write");
     for(auto casp:caspr){
-        casp->updateController(*target_pos[casp->end_effektor_name],
-                               *target_vel[casp->end_effektor_name],
-                               Kp[casp->end_effektor_name],Kd[casp->end_effektor_name]);
+        nh->getParam("Kp_controller", Kp[casp->end_effektor_name]);
+        nh->getParam("Kd_controller", Kd[casp->end_effektor_name]);
+        nh->getParam("target_pos", casp->target_pos);
+        nh->getParam("target_vel", casp->target_vel);
+        casp->updateController(Kp[casp->end_effektor_name],Kd[casp->end_effektor_name]);
     }
 }
 

@@ -17,9 +17,9 @@ target_pos: [0,0,0,0,0,0]
 target_vel: [0,0,0,0,0,0]
 target_acc: [0,0,0,0,0,0]
 planner: "KPIECEkConfigDefault"
-planning_group: "hand_left"
+planning_group: "lower_arm_left"
 log: 0
-end_effectors: ["link5"]
+end_effectors: ["lower_arm_left"]
 hand_left:
   target_pos: [0,0,0,0,0,0]
   target_vel: [0,0,0,0,0,0]
