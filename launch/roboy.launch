@@ -34,12 +34,12 @@
     <!--</include>-->
 
     <!--load robot description onto parameter server-->
-    <include file="$(optenv CONFIG_PATH /home/letrend/workspace/roboy_middleware/src/roboy_moveit_configs)/$(arg model_name)_moveit_config/launch/planning_context.launch">
+    <include file="$(optenv CONFIG_PATH /home/roboy/workspace/roboy_middleware/src/roboy_moveit_configs)/$(arg model_name)_moveit_config/launch/planning_context.launch">
         <arg name="load_robot_description" value="true"/>
     </include>
 
     <!--start path planning-->
-    <include file="$(optenv CONFIG_PATH /home/letrend/workspace/roboy_middleware/src/roboy_moveit_configs)/$(arg model_name)_moveit_config/launch/move_group.launch">
+    <include file="$(optenv CONFIG_PATH /home/roboy/workspace/roboy_middleware/src/roboy_moveit_configs)/$(arg model_name)_moveit_config/launch/move_group.launch">
         <arg name="allow_trajectory_execution" value="false"/>
     </include>
 
@@ -61,6 +61,6 @@
 </launch>
         <!--launch-prefix="gdb -ex run"-->
         <!--launch-prefix="gdb -ex run"-->
-        <!-- FOR DEBUGGING USE THIS launch-prefix="xterm -e gdb -se devel/lib/myo_master/multiJoint" FOR VALGRIND USE THIS launch-prefix="valgrind -log-file=/home/letrend/workspace/ros_hierarchy/valgrind.log -leak-check=full"-->
+        <!-- FOR DEBUGGING USE THIS launch-prefix="xterm -e gdb -se devel/lib/myo_master/multiJoint" FOR VALGRIND USE THIS launch-prefix="valgrind -log-file=/home/roboy/workspace/ros_hierarchy/valgrind.log -leak-check=full"-->
 
         <!-- args="-c /home/roboy/workspace/roboy-ros-control/src/roboy_powerlink/powerlink/output/mnobd.cdc"-->

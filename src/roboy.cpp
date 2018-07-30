@@ -34,11 +34,15 @@ Roboy::Roboy() {
     if(!CASPR::parseSDFusion(sdf,muscInfo))
         ROS_FATAL("error parsing sdf");
 
+    stringstream str;
+    str << "initialized CASPR controllers for endeffectors:" << endl;
     for(const string &endeffector:endeffectors) {
         caspr.push_back(boost::shared_ptr<CASPR>(new CASPR(endeffector, muscInfo)));
         target_pos[endeffector] = &caspr.back()->target_pos;
         target_vel[endeffector] = &caspr.back()->target_vel;
+        str << endeffector << endl;
     }
+    ROS_INFO_STREAM(str.str());
 }
 
 Roboy::~Roboy() {
@@ -117,10 +121,10 @@ void Roboy::read() {
 void Roboy::write() {
     ROS_DEBUG("write");
     for(auto casp:caspr){
-        nh->getParam("Kp_controller", Kp[casp->end_effektor_name]);
-        nh->getParam("Kd_controller", Kd[casp->end_effektor_name]);
-        nh->getParam("target_pos", casp->target_pos);
-        nh->getParam("target_vel", casp->target_vel);
+        nh->getParam(casp->end_effektor_name + "/Kp", Kp[casp->end_effektor_name]);
+        nh->getParam(casp->end_effektor_name + "/Kd", Kd[casp->end_effektor_name]);
+        nh->getParam(casp->end_effektor_name + "/target_pos", casp->target_pos);
+        nh->getParam(casp->end_effektor_name + "/target_vel", casp->target_vel);
         casp->updateController(Kp[casp->end_effektor_name],Kd[casp->end_effektor_name]);
     }
 }
