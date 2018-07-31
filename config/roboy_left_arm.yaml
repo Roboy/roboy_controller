@@ -14,8 +14,8 @@ end_effectors: ["lower_arm_left"]
 lower_arm_left:
   Kp: 100
   Kd: 10
-  target_pos: [0,0,0,0,0]
-  target_vel: [0,0,0,0,0]
+  target_pos: [0,0,0,0]
+  target_vel: [0,0,0,0]
   
 motor0:
   id: 0
