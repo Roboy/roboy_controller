@@ -152,8 +152,21 @@ private:
     //! state strings describing each state
     std::map<ActionState, std::string> state_strings = {
             {WaitForInitialize, "Waiting for initialization of controllers"},
-            {SetpointControl,       "Setpoint Control"},
-            {TrajectoryControl,         "Trajectory Control"}
+            {SetpointControl, "Setpoint Control"},
+            {TrajectoryControl, "Trajectory Control"}
     };
+
+    struct objectState { 
+        float x; 
+        float y; 
+        float z;  
+        float yaw; 
+        float pitch; 
+        float roll;
+    };
+
+    void getStick(objectState &s);
+
+    bool planTrajectory(objectState eefGoal);
 };
 
