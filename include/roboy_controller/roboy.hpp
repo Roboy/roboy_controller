@@ -165,7 +165,11 @@ private:
         float roll;
     };
 
+    
+
     void getStick(objectState &s);
+
+    void precomputeTrajectories();
 
     bool planTrajectory(objectState eefGoal);
 };

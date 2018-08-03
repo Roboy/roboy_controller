@@ -9,7 +9,6 @@
 #include <moveit/kinematic_constraints/utils.h>
 #include <moveit_msgs/DisplayTrajectory.h>
 #include <moveit_msgs/PlanningScene.h>
-#include <moveit_visual_tools/moveit_visual_tools.h>
 
 #include <boost/scoped_ptr.hpp>
 
@@ -150,13 +149,13 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
 
     currentState = WaitForInitialize;
 
+    objectState stick;
+
     while (ros::ok()) {
         ROS_INFO_THROTTLE(5, "%s", state_strings[currentState].c_str());
         switch (currentState) {
         case WaitForInitialize: {
             ROS_WARN("Waiting For Roboy to get ready");
-
-            objectState stick;
 
             printf( "%6.4lf, ", stick.x );
             printf( "%6.4lf, ", stick.y );
@@ -175,14 +174,20 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
             printf( "%6.4lf, ", stick.pitch );
 
 
-
             prev_time = ros::Time::now();
-            Roboy::NextState(currentState);
+            //NextState(currentState);
             break;
         }
         case SetpointControl: {
+            ROS_WARN("SetpointControl");
             const ros::Time time = ros::Time::now();
             const ros::Duration period = time - prev_time;
+
+            thread precomputeTrajectories(precomputeTrajectories);
+
+            //planTrajectory(stick);
+
+
 
 //                for(auto casp:caspr){
 //                    nh->getParam(casp->end_effektor_name + "/target_pos", casp->target_pos);
@@ -196,6 +201,7 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
             break;
         }
         case TrajectoryControl: {
+            ROS_WARN("TrajectoryControl");
             read();
             for (auto casp : caspr) {
                 if (casp->new_trajectory) {
@@ -277,6 +283,21 @@ ActionState Roboy::NextState(ActionState s) {
 }
 
 //@TODO
+void Roboy::precomputeTrajectories() {
+    //get keys array
+    //push initial
+
+    //define offset
+
+    //start->end array string[string[trajectories]]
+
+    //for i in pos array
+    //planTrajectory i-> (j != i)
+
+    //save in roboy paths object
+}
+
+//@TODO
 void Roboy::getStick(objectState &s) {
     s.x = 0.1;
     s.y = 0.1;
@@ -284,14 +305,15 @@ void Roboy::getStick(objectState &s) {
     s.yaw = 0.1;
     s.pitch = 0.1;
     s.roll = 0.1;
-    ROS_WARN("test");
+    ROS_WARN("getStick");
 }
 
+//@TODO
 bool Roboy::planTrajectory(objectState eefGoal) {
 
-    ros::NodeHandle node_handle("~");
+    ros::NodeHandle node_handle("motion_planner");
 
-    const std::string PLANNING_GROUP = "roboy_xylophone_left_arm";
+    const std::string PLANNING_GROUP = "palm";
     robot_model_loader::RobotModelLoader robot_model_loader("robot_description");
     robot_model::RobotModelPtr robot_model = robot_model_loader.getModel();
 
@@ -314,7 +336,7 @@ bool Roboy::planTrajectory(objectState eefGoal) {
     // from the ROS parameter server, and then load the planner
     // making sure to catch all exceptions.
     if (!node_handle.getParam("planning_plugin", planner_plugin_name))
-        ROS_FATAL_STREAM("Could not find planner plugin name");
+        ROS_FATAL_STREAM("Could not find planner plugin name: " << planner_plugin_name);
     try
     {
         planner_plugin_loader.reset(new pluginlib::ClassLoader<planning_interface::PlannerManager>("moveit_core", "planning_interface::PlannerManager"));
@@ -325,7 +347,7 @@ bool Roboy::planTrajectory(objectState eefGoal) {
     }
     try
     {
-        planner_instance.reset(planner_plugin_loader->createUnmanagedInstance(planner_plugin_name));
+        planner_instance.reset(planner_plugin_loader->createUnmanagedInstance("ompl_interface/OMPLPlanner"));
         if (!planner_instance->initialize(robot_model, node_handle.getNamespace()))
             ROS_FATAL_STREAM("Could not initialize planner instance");
         ROS_INFO_STREAM("Using planning interface '" << planner_instance->getDescription() << "'");
@@ -344,7 +366,7 @@ bool Roboy::planTrajectory(objectState eefGoal) {
     planning_interface::MotionPlanRequest req;
     planning_interface::MotionPlanResponse res;
     geometry_msgs::PoseStamped pose;
-    pose.header.frame_id = "base_link";//@TODO
+    pose.header.frame_id = "base";
 
     //@TODO
     pose.pose.position.x = 0.3;
@@ -356,9 +378,9 @@ bool Roboy::planTrajectory(objectState eefGoal) {
     std::vector<double> tolerance_pose(3, 0.01);
     std::vector<double> tolerance_angle(3, 0.01);
 
-    req.group_name = "roboy_xylophone_left_arm";
+    req.group_name = "palm";
 
-    moveit_msgs::Constraints pose_goal = kinematic_constraints::constructGoalConstraints("eef_link", pose, tolerance_pose, tolerance_angle);//@TODO 
+    moveit_msgs::Constraints pose_goal = kinematic_constraints::constructGoalConstraints("palm", pose, tolerance_pose, tolerance_angle);//@TODO
 
     req.goal_constraints.push_back(pose_goal);
 
@@ -393,6 +415,7 @@ void update(controller_manager::ControllerManager *cm) {
 }
 
 int main(int argc, char *argv[]) {
+
     ros::init(argc, argv, "roboy", ros::init_options::NoRosout);
 
     Roboy robot;
