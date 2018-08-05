@@ -42,14 +42,14 @@
     <!-- Load the parameters to the parameter server from the yaml file-->
     <rosparam file="$(find roboy_controller)/config/$(arg model_name).yaml" command="load"/>
 
-    <!--<node name="roboy_controller"-->
-          <!--pkg="roboy_controller"-->
-          <!--type="roboy"-->
-          <!--respawn="false"-->
-          <!--output="screen"-->
-          <!--args="$(arg model_name)"-->
-          <!--launch-prefix="gdb"-->
-    <!--/>-->
+    <node name="roboy_controller"
+          pkg="roboy_controller"
+          type="roboy"
+          respawn="false"
+          output="screen"
+          args="$(arg model_name)"
+          launch-prefix="gdb -ex run"
+    />
 </launch>
         <!--launch-prefix="gdb -ex run"-->
         <!--launch-prefix="gdb -ex run"-->

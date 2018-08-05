@@ -10,8 +10,8 @@ qp_working_sets: 1000
 log: 0
 end_effectors: ["link5"]
 link5:
-  Kp: 100
-  Kd: 10
+  Kp: 1
+  Kd: 0
   target_pos: [0,0,0,0,0,0]
   target_vel: [0,0,0,0,0,0]
 

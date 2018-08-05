@@ -7,10 +7,8 @@ max_force: 10000
 min_force: 0
 qp_print_level: 0
 qp_working_sets: 1000
-planner: "KPIECEkConfigDefault"
-planning_group: "palm"
 log: 0
-end_effectors: ["palm", "left_little_limb3", "left_ring_limb3", "left_middle_limb3", "left_index_limb3", "left_thumb_limb3"]
+end_effectors: ["palm"]
 palm:
   Kp: 100
   Kd: 10

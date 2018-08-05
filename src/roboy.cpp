@@ -136,7 +136,6 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
     ros::Time prev_time = ros::Time::now();
 
     currentState = SetpointControl;
-
     while (ros::ok()) {
         ROS_INFO_THROTTLE(5, "%s", state_strings[currentState].c_str());
         switch (currentState) {
