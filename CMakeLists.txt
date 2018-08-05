@@ -12,6 +12,10 @@ find_package(catkin REQUIRED COMPONENTS roscpp controller_interface hardware_int
         roboy_communication_middleware ecl_geometry common_utilities controller_manager roboy_simulation)
 catkin_package(CATKIN_DEPENDS message_runtime roboy_communication_middleware common_utilities roboy_simulation INCLUDE_DIRS include)
 
+# roboticslibrary
+find_package(rl REQUIRED)
+include_directories(${RL_INCLUDE_DIRS})
+
 find_package(gazebo REQUIRED)
 include_directories(${GAZEBO_INCLUDE_DIRS})
 link_directories(${GAZEBO_LIBRARY_DIRS})

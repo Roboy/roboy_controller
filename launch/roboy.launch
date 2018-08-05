@@ -33,31 +33,23 @@
         <!--<arg name="value" value="x:=0.0 y:=0.0 z:=0.0 roll:=0 pitch:=0 yaw:=0" />-->
     <!--</include>-->
 
-    <!--load robot description onto parameter server-->
-    <include file="$(optenv CONFIG_PATH /home/roboy/workspace/roboy_middleware/src/roboy_moveit_configs)/$(arg model_name)_moveit_config/launch/planning_context.launch">
-        <arg name="load_robot_description" value="true"/>
-    </include>
-
-    <!--start path planning-->
-    <include file="$(optenv CONFIG_PATH /home/roboy/workspace/roboy_middleware/src/roboy_moveit_configs)/$(arg model_name)_moveit_config/launch/move_group.launch">
-        <arg name="allow_trajectory_execution" value="false"/>
-    </include>
-
     <node pkg="tf" type="static_transform_publisher" name="static_map" args="0 0 0 0 0 0 1  /world /map  100"/>
 
     <param name="robot_description_sdf" textfile="$(find roboy_models)/$(arg model_name)/model.sdf" />
+    <param name="robot_description" textfile="$(find roboy_models)/$(arg model_name)/model.urdf" />
+    <param name="urdf_path" value="$(find roboy_models)/$(arg model_name)/model.urdf" />
 
     <!-- Load the parameters to the parameter server from the yaml file-->
     <rosparam file="$(find roboy_controller)/config/$(arg model_name).yaml" command="load"/>
 
-    <node name="roboy_controller"
-          pkg="roboy_controller"
-          type="roboy"
-          respawn="false"
-          output="screen"
-          args="$(arg model_name)"
-          launch-prefix="gdb -ex run"
-    />
+    <!--<node name="roboy_controller"-->
+          <!--pkg="roboy_controller"-->
+          <!--type="roboy"-->
+          <!--respawn="false"-->
+          <!--output="screen"-->
+          <!--args="$(arg model_name)"-->
+          <!--launch-prefix="gdb"-->
+    <!--/>-->
 </launch>
         <!--launch-prefix="gdb -ex run"-->
         <!--launch-prefix="gdb -ex run"-->
