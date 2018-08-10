@@ -34,6 +34,8 @@
 #include <Eigen/Core>
 #include <Eigen/Dense>
 
+#include <string>
+
 using namespace std;
 using namespace Eigen;
 
@@ -156,21 +158,23 @@ private:
             {TrajectoryControl, "Trajectory Control"}
     };
 
-    struct objectState { 
+    struct stick { 
         float x; 
         float y; 
         float z;  
         float yaw; 
         float pitch; 
         float roll;
-    };
+    } stick;
 
-    
-
-    void getStick(objectState &s);
+    void getStick();
 
     void precomputeTrajectories();
 
-    bool planTrajectory(objectState eefGoal);
+    vector<double> getTrajectory(geometry_msgs::Vector3 targetPosition, vector<double> targetRotation);
+
+    map<string, vector<double>> keyStates;
+
+    void grabStick();
 };
 

@@ -12,6 +12,11 @@
 
 #include <boost/scoped_ptr.hpp>
 
+#include <cstdlib>
+#include <map>
+
+using namespace std;
+
 bool Roboy::shutdown_flag = false;
 
 Roboy::Roboy() {
@@ -149,33 +154,24 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
 
     currentState = WaitForInitialize;
 
-    objectState stick;
-
     while (ros::ok()) {
         ROS_INFO_THROTTLE(5, "%s", state_strings[currentState].c_str());
         switch (currentState) {
         case WaitForInitialize: {
             ROS_WARN("Waiting For Roboy to get ready");
 
-            printf( "%6.4lf, ", stick.x );
-            printf( "%6.4lf, ", stick.y );
-            printf( "%6.4lf, ", stick.z );
-            printf( "%6.4lf, ", stick.yaw );
-            printf( "%6.4lf, ", stick.roll );
-            printf( "%6.4lf, ", stick.pitch );
+            thread grab_thread(&Roboy::grabStick, this);
 
-            getStick(stick);
+            precomputeTrajectories();
 
-            printf( "%6.4lf, ", stick.x );
-            printf( "%6.4lf, ", stick.y );
-            printf( "%6.4lf, ", stick.z );
-            printf( "%6.4lf, ", stick.yaw );
-            printf( "%6.4lf, ", stick.roll );
-            printf( "%6.4lf, ", stick.pitch );
+            ROS_WARN("Precomputing finished, waiting for stick grabbery");
 
+            grab_thread.join();
+
+            ROS_WARN("It's a joined venture");
 
             prev_time = ros::Time::now();
-            //NextState(currentState);
+            NextState(currentState);
             break;
         }
         case SetpointControl: {
@@ -183,9 +179,7 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
             const ros::Time time = ros::Time::now();
             const ros::Duration period = time - prev_time;
 
-            thread precomputeTrajectories(precomputeTrajectories);
-
-            //planTrajectory(stick);
+            //thread precomputeTrajectories(Roboy::precomputeTrajectories);
 
 
 
@@ -284,81 +278,154 @@ ActionState Roboy::NextState(ActionState s) {
 
 //@TODO
 void Roboy::precomputeTrajectories() {
+    map<string, geometry_msgs::Vector3> positions;
+
     //get keys array
-    //push initial
 
-    //define offset
+    geometry_msgs::Vector3 offset;
+    offset.x = 1;
+    offset.y = 1;
+    offset.z = 1;
 
-    //start->end array string[string[trajectories]]
+    vector<double> bestRotation = { 0, 0, 0, 1 };
 
-    //for i in pos array
-    //planTrajectory i-> (j != i)
 
-    //save in roboy paths object
+    for (auto const& p : positions)
+    {
+        geometry_msgs::Vector3 offsetPosition;
+        offsetPosition.x = p.second.x + offset.x;
+        offsetPosition.y = p.second.y + offset.y;
+        offsetPosition.z = p.second.z + offset.z;
+
+        vector<double> jointAngles = getTrajectory(offsetPosition, bestRotation);
+
+        keyStates[p.first] = jointAngles;
+
+    }
 }
 
 //@TODO
-void Roboy::getStick(objectState &s) {
-    s.x = 0.1;
-    s.y = 0.1;
-    s.z = 0.1;
-    s.yaw = 0.1;
-    s.pitch = 0.1;
-    s.roll = 0.1;
-    ROS_WARN("getStick");
+void Roboy::getStick() {
+    stick.x = 0.1;
+    stick.y = 0.1;
+    stick.z = 0.1;
+    stick.yaw = 0.1;
+    stick.pitch = 0.1;
+    stick.roll = 0.1;
+    ROS_WARN("Stick Position and Rotation Updated");
 }
 
-//@TODO
-bool Roboy::planTrajectory(objectState eefGoal) {
+void Roboy::grabStick() {
+    getStick();
+    std::chrono::milliseconds timespan(2000);
+    std::this_thread::sleep_for(timespan);
+    ROS_WARN("GrabberBabber");
+}
 
-    ros::NodeHandle node_handle("motion_planner");
+vector<double> Roboy::getTrajectory(geometry_msgs::Vector3 targetPosition, vector<double> targetRotation) {
 
-    const std::string PLANNING_GROUP = "palm";
+    string end_effektor = "palm";
+
+    int type = 0;
+
+    //ros::init(argc, argv, "InverseKinematicsClient");
+    ros::NodeHandle nh;
+    ros::ServiceClient client = nh.serviceClient<roboy_communication_middleware::InverseKinematics>("/CASPR/" + end_effektor + "/InverseKinematics");
+
+    roboy_communication_middleware::InverseKinematics srv;
+
+    srv.request.type = type;
+    srv.request.targetPosition = targetPosition;
+    srv.request.targetRotation = targetRotation;
+
+
+    if (client.call(srv))
+    {
+        ROS_WARN("Angle: %ld", srv.response.angles[0]);
+    }
+    else
+    {
+        ROS_ERROR("Failed to call service InverseKinematicsService");
+        throw std::runtime_error( "Failed to call service InverseKinematicsService" );
+    }
+
+
+    return srv.response.angles;
+
+    /*robot_state::JointModelGroup* joint_model_group;
+    robot_model::RobotModelPtr kinematic_model;
+    robot_state::RobotStatePtr kinematic_state;
+    planning_interface::PlannerManagerPtr planner_instance;
+    boost::scoped_ptr<pluginlib::ClassLoader<planning_interface::PlannerManager> > planner_plugin_loader;
+    planning_scene::PlanningScenePtr planning_scene;
+
+    string end_effektor = "palm";
+    if (!ros::isInitialized()) {
+        int argc = 0;
+        char **argv = NULL;
+        ros::init(argc, argv, "CASPR_" + end_effektor, ros::init_options::NoSigintHandler);
+    }
+    nh = ros::NodeHandlePtr(new ros::NodeHandle);
+
+
     robot_model_loader::RobotModelLoader robot_model_loader("robot_description");
     robot_model::RobotModelPtr robot_model = robot_model_loader.getModel();
+    kinematic_model = robot_model_loader.getModel();
 
-    /* Create a RobotState and JointModelGroup to keep track of the current robot pose and planning group*/
-    robot_state::RobotStatePtr robot_state(new robot_state::RobotState(robot_model));
-    const robot_state::JointModelGroup* joint_model_group = robot_state->getJointModelGroup(PLANNING_GROUP);
+    const std::vector<moveit::core::JointModelGroup *> joint_model_groups = robot_model->getJointModelGroups();
 
-    // Using the :moveit_core:`RobotModel`, we can construct a
-    // :planning_scene:`PlanningScene` that maintains the state of
-    // the world (including the robot).
-    planning_scene::PlanningScenePtr planning_scene(new planning_scene::PlanningScene(robot_model));
+    planning_scene.reset(new planning_scene::PlanningScene(robot_model));
 
-    // We will now construct a loader to load a planner, by name.
-    // Note that we are using the ROS pluginlib library here.
-    boost::scoped_ptr<pluginlib::ClassLoader<planning_interface::PlannerManager>> planner_plugin_loader;
-    planning_interface::PlannerManagerPtr planner_instance;
     std::string planner_plugin_name;
 
-    // We will get the name of planning plugin we want to load
-    // from the ROS parameter server, and then load the planner
-    // making sure to catch all exceptions.
-    if (!node_handle.getParam("planning_plugin", planner_plugin_name))
-        ROS_FATAL_STREAM("Could not find planner plugin name: " << planner_plugin_name);
-    try
-    {
-        planner_plugin_loader.reset(new pluginlib::ClassLoader<planning_interface::PlannerManager>("moveit_core", "planning_interface::PlannerManager"));
+    if (!nh->getParam("planning_plugin", planner_plugin_name))
+        ROS_FATAL_STREAM("Could not find planner plugin name");
+    try {
+        planner_plugin_loader.reset(new pluginlib::ClassLoader<planning_interface::PlannerManager>("moveit_core",
+                                                                                                   "planning_interface::PlannerManager"));
     }
-    catch (pluginlib::PluginlibException& ex)
-    {
+    catch (pluginlib::PluginlibException &ex) {
         ROS_FATAL_STREAM("Exception while creating planning plugin loader " << ex.what());
     }
-    try
-    {
-        planner_instance.reset(planner_plugin_loader->createUnmanagedInstance("ompl_interface/OMPLPlanner"));
-        if (!planner_instance->initialize(robot_model, node_handle.getNamespace()))
+    try {
+        planner_instance.reset(planner_plugin_loader->createUnmanagedInstance(planner_plugin_name));
+    //            planning_scene::PlannerConfigurationMap configs = planner_instance->getPlannerConfigurations;
+    //            planner_instance->setPlannerConfigurations();
+        if (!planner_instance->initialize(robot_model, ""))
             ROS_FATAL_STREAM("Could not initialize planner instance");
         ROS_INFO_STREAM("Using planning interface '" << planner_instance->getDescription() << "'");
     }
-    catch (pluginlib::PluginlibException& ex)
-    {
-        const std::vector<std::string>& classes = planner_plugin_loader->getDeclaredClasses();
+    catch (pluginlib::PluginlibException &ex) {
+        const std::vector<std::string> &classes = planner_plugin_loader->getDeclaredClasses();
         std::stringstream ss;
         for (std::size_t i = 0; i < classes.size(); ++i)
             ss << classes[i] << " ";
-        ROS_ERROR_STREAM("Exception while loading planner '" << planner_plugin_name << "': " << ex.what() << std::endl << "Available plugins: " << ss.str());
+        ROS_ERROR_STREAM(
+                "Exception while loading planner '" << planner_plugin_name << "': " << ex.what() << std::endl
+                                                    << "Available plugins: " << ss.str());
+    }
+
+    if (!kinematic_model->hasJointModelGroup(end_effektor.c_str())) {
+        ROS_ERROR("robot does not have joint model group %s, check your moveit config", end_effektor.c_str());
+        return;
+    }
+
+    joint_model_group = kinematic_model->getJointModelGroup(end_effektor.c_str());
+
+    kinematic_state = robot_state::RobotStatePtr(new robot_state::RobotState(kinematic_model));
+
+    string robot_desc_string;
+    nh->getParam("robot_description", robot_desc_string);
+    if (!kdl_parser::treeFromString(robot_desc_string, endeffektor_tree)) {
+        ROS_ERROR("Failed to construct kdl tree");
+        return;
+    }
+
+    const moveit::core::LinkModel *root_link = joint_model_group->getLinkModels()[0]->getParentLinkModel();
+    if(root_link!=nullptr){
+        root_link_name = root_link->getName();
+    }else{
+        root_link_name = kinematic_model->getRootLinkName();
     }
 
 
@@ -397,9 +464,8 @@ bool Roboy::planTrajectory(objectState eefGoal) {
     }
 
     moveit_msgs::MotionPlanResponse response;
-    res.getMessage(response);
+    res.getMessage(response);*/
 
-    return true;
 
 }
 
