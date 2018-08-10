@@ -59,8 +59,8 @@ public:
     ~Roboy();
 
     /**
-	 * Read from hardware
-	 */
+     * Read from hardware
+     */
     void read();
 
     /**
@@ -93,17 +93,17 @@ private:
     bool unloadControllers(vector<string> controllers);
 
     /*
-	 * This function starts the controllers registered to the individual joint interfaces
-	 * @param controllers names of controllers
-	 * @return success
-	 */
+     * This function starts the controllers registered to the individual joint interfaces
+     * @param controllers names of controllers
+     * @return success
+     */
     bool startControllers(vector<string> controllers);
 
     /*
-	 * This function stops the controllers registered to the individual joint interfaces
-	 * @param controllers names of controllers
-	 * @return success
-	 */
+     * This function stops the controllers registered to the individual joint interfaces
+     * @param controllers names of controllers
+     * @return success
+     */
     bool stopControllers(vector<string> controllers);
 
     /**
@@ -133,8 +133,8 @@ private:
     controller_manager::ControllerManager *cm = nullptr;
     ros::ServiceServer init_srv, record_srv, resetSpring_srv;
 
-    map<string,double> Kp, Kd;
-    map<string,vector<double>*> target_pos, target_vel;
+    map<string, double> Kp, Kd;
+    map<string, vector<double>*> target_pos, target_vel;
     vector<CASPRptr> caspr;
 
     roboy_communication_middleware::RoboyState roboyStateMsg;
@@ -153,17 +153,17 @@ private:
 
     //! state strings describing each state
     std::map<ActionState, std::string> state_strings = {
-            {WaitForInitialize, "Waiting for initialization of controllers"},
-            {SetpointControl, "Setpoint Control"},
-            {TrajectoryControl, "Trajectory Control"}
+        {WaitForInitialize, "Waiting for initialization of controllers"},
+        {SetpointControl, "Setpoint Control"},
+        {TrajectoryControl, "Trajectory Control"}
     };
 
-    struct stick { 
-        float x; 
-        float y; 
-        float z;  
-        float yaw; 
-        float pitch; 
+    struct stick {
+        float x;
+        float y;
+        float z;
+        float yaw;
+        float pitch;
         float roll;
     } stick;
 
@@ -176,5 +176,45 @@ private:
     map<string, vector<double>> keyStates;
 
     void grabStick();
+    map<string, geometry_msgs::Vector3> getCoordinates();
+    vector<string> keyNames = {   "C_3",
+                                  "A_1",
+                                  "A_2",
+                                  "G_2",
+                                  "D_2",
+                                  "H_1",
+                                  "C_2",
+                                  "F_0",
+                                  "H_0",
+                                  "G_0",
+                                  "F_sharp_1",
+                                  "G_1",
+                                  "C_sharo_0",
+                                  "C_sharp_1",
+                                  "G_sharp_1",
+                                  "E_2",
+                                  "E_1",
+                                  "F_sharp_0",
+                                  "D_sharp_0",
+                                  "D_sharp_2",
+                                  "F_2",
+                                  "F_1",
+                                  "D_0",
+                                  "D_sharp_1",
+                                  "H_2",
+                                  "A_sharp_0",
+                                  "C_1",
+                                  "D_1",
+                                  "A_0",
+                                  "A_sharp_1",
+                                  "C_0",
+                                  "E_0",
+                                  "C_sharp_2",
+                                  "G_sharp_0",
+                                  "G_sharp_2",
+                                  "F_sharp_2",
+                                  "A_sharp_2",
+                                  "stick"
+                              };
 };
 

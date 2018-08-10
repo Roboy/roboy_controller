@@ -14,6 +14,7 @@
 
 #include <cstdlib>
 #include <map>
+#include <tf/transform_listener.h>
 
 using namespace std;
 
@@ -140,8 +141,6 @@ void Roboy::write() {
     for (auto casp : caspr) {
         nh->getParam(casp->end_effektor_name + "/Kp", Kp[casp->end_effektor_name]);
         nh->getParam(casp->end_effektor_name + "/Kd", Kd[casp->end_effektor_name]);
-        nh->getParam(casp->end_effektor_name + "/target_pos", casp->target_pos);
-        nh->getParam(casp->end_effektor_name + "/target_vel", casp->target_vel);
         casp->updateController(Kp[casp->end_effektor_name], Kd[casp->end_effektor_name]);
     }
 }
@@ -179,16 +178,18 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
             const ros::Time time = ros::Time::now();
             const ros::Duration period = time - prev_time;
 
-            //thread precomputeTrajectories(Roboy::precomputeTrajectories);
-
-
-
-//                for(auto casp:caspr){
-//                    nh->getParam(casp->end_effektor_name + "/target_pos", casp->target_pos);
-//                    nh->getParam(casp->end_effektor_name + "/target_vel", casp->target_vel);
-//                }
-
             read();
+
+            string keyName;
+            nh->getParam("/key", keyName);
+
+            if (keyStates.find(keyName) == keyStates.end()) {
+                ROS_WARN("Unknown Key");
+            }
+            else {
+                *target_pos["palm"] = keyStates[keyName];
+            }
+
             write();
 
             prev_time = time;
@@ -278,9 +279,7 @@ ActionState Roboy::NextState(ActionState s) {
 
 //@TODO
 void Roboy::precomputeTrajectories() {
-    map<string, geometry_msgs::Vector3> positions;
-
-    //get keys array
+    map<string, geometry_msgs::Vector3> positions = getCoordinates();
 
     geometry_msgs::Vector3 offset;
     offset.x = 1;
@@ -306,6 +305,7 @@ void Roboy::precomputeTrajectories() {
 
 //@TODO
 void Roboy::getStick() {
+
     stick.x = 0.1;
     stick.y = 0.1;
     stick.z = 0.1;
@@ -319,7 +319,32 @@ void Roboy::grabStick() {
     getStick();
     std::chrono::milliseconds timespan(2000);
     std::this_thread::sleep_for(timespan);
+
     ROS_WARN("GrabberBabber");
+    read();
+    for (auto casp : caspr) {
+        if (casp->new_trajectory) {
+            casp->trajectory_index = 0;
+            casp->new_trajectory = false;
+        }
+
+        if (casp->trajectory_index >= casp->trajectory.joint_trajectory.points.size()) {
+            *target_pos[casp->end_effektor_name] = casp->trajectory.joint_trajectory.points[casp->trajectory_index].positions;
+            *target_vel[casp->end_effektor_name] = casp->trajectory.joint_trajectory.points[casp->trajectory_index].velocities;
+        }
+
+        double diffnorm = 0;
+        for (int i = 0; i < target_pos.size(); i++)
+            diffnorm += pow(target_pos[casp->end_effektor_name]->at(i) - casp->joint_pos[i], 2.0);
+        diffnorm = sqrt(diffnorm);
+        if (diffnorm < 0.1) {
+            if (casp->trajectory_index < casp->trajectory.joint_trajectory.points.size()) {
+                ROS_INFO_STREAM_THROTTLE(3, casp->end_effektor_name << " trajectory setpoint #" << casp->trajectory_index << " reached with error " << diffnorm);
+                casp->trajectory_index++;
+            }
+        }
+    }
+    write();
 }
 
 vector<double> Roboy::getTrajectory(geometry_msgs::Vector3 targetPosition, vector<double> targetRotation) {
@@ -352,122 +377,36 @@ vector<double> Roboy::getTrajectory(geometry_msgs::Vector3 targetPosition, vecto
 
     return srv.response.angles;
 
-    /*robot_state::JointModelGroup* joint_model_group;
-    robot_model::RobotModelPtr kinematic_model;
-    robot_state::RobotStatePtr kinematic_state;
-    planning_interface::PlannerManagerPtr planner_instance;
-    boost::scoped_ptr<pluginlib::ClassLoader<planning_interface::PlannerManager> > planner_plugin_loader;
-    planning_scene::PlanningScenePtr planning_scene;
-
-    string end_effektor = "palm";
-    if (!ros::isInitialized()) {
-        int argc = 0;
-        char **argv = NULL;
-        ros::init(argc, argv, "CASPR_" + end_effektor, ros::init_options::NoSigintHandler);
-    }
-    nh = ros::NodeHandlePtr(new ros::NodeHandle);
-
-
-    robot_model_loader::RobotModelLoader robot_model_loader("robot_description");
-    robot_model::RobotModelPtr robot_model = robot_model_loader.getModel();
-    kinematic_model = robot_model_loader.getModel();
-
-    const std::vector<moveit::core::JointModelGroup *> joint_model_groups = robot_model->getJointModelGroups();
-
-    planning_scene.reset(new planning_scene::PlanningScene(robot_model));
-
-    std::string planner_plugin_name;
-
-    if (!nh->getParam("planning_plugin", planner_plugin_name))
-        ROS_FATAL_STREAM("Could not find planner plugin name");
-    try {
-        planner_plugin_loader.reset(new pluginlib::ClassLoader<planning_interface::PlannerManager>("moveit_core",
-                                                                                                   "planning_interface::PlannerManager"));
-    }
-    catch (pluginlib::PluginlibException &ex) {
-        ROS_FATAL_STREAM("Exception while creating planning plugin loader " << ex.what());
-    }
-    try {
-        planner_instance.reset(planner_plugin_loader->createUnmanagedInstance(planner_plugin_name));
-    //            planning_scene::PlannerConfigurationMap configs = planner_instance->getPlannerConfigurations;
-    //            planner_instance->setPlannerConfigurations();
-        if (!planner_instance->initialize(robot_model, ""))
-            ROS_FATAL_STREAM("Could not initialize planner instance");
-        ROS_INFO_STREAM("Using planning interface '" << planner_instance->getDescription() << "'");
-    }
-    catch (pluginlib::PluginlibException &ex) {
-        const std::vector<std::string> &classes = planner_plugin_loader->getDeclaredClasses();
-        std::stringstream ss;
-        for (std::size_t i = 0; i < classes.size(); ++i)
-            ss << classes[i] << " ";
-        ROS_ERROR_STREAM(
-                "Exception while loading planner '" << planner_plugin_name << "': " << ex.what() << std::endl
-                                                    << "Available plugins: " << ss.str());
-    }
-
-    if (!kinematic_model->hasJointModelGroup(end_effektor.c_str())) {
-        ROS_ERROR("robot does not have joint model group %s, check your moveit config", end_effektor.c_str());
-        return;
-    }
-
-    joint_model_group = kinematic_model->getJointModelGroup(end_effektor.c_str());
-
-    kinematic_state = robot_state::RobotStatePtr(new robot_state::RobotState(kinematic_model));
-
-    string robot_desc_string;
-    nh->getParam("robot_description", robot_desc_string);
-    if (!kdl_parser::treeFromString(robot_desc_string, endeffektor_tree)) {
-        ROS_ERROR("Failed to construct kdl tree");
-        return;
-    }
-
-    const moveit::core::LinkModel *root_link = joint_model_group->getLinkModels()[0]->getParentLinkModel();
-    if(root_link!=nullptr){
-        root_link_name = root_link->getName();
-    }else{
-        root_link_name = kinematic_model->getRootLinkName();
-    }
-
-
-    // Pose Goal
-    planning_interface::MotionPlanRequest req;
-    planning_interface::MotionPlanResponse res;
-    geometry_msgs::PoseStamped pose;
-    pose.header.frame_id = "base";
-
-    //@TODO
-    pose.pose.position.x = 0.3;
-    pose.pose.position.y = 0.0;
-    pose.pose.position.z = 0.75;
-    pose.pose.orientation.w = 1.0;
-
-    // A tolerance of 0.01 m is specified in position and 0.01 radians in orientation
-    std::vector<double> tolerance_pose(3, 0.01);
-    std::vector<double> tolerance_angle(3, 0.01);
-
-    req.group_name = "palm";
-
-    moveit_msgs::Constraints pose_goal = kinematic_constraints::constructGoalConstraints("palm", pose, tolerance_pose, tolerance_angle);//@TODO
-
-    req.goal_constraints.push_back(pose_goal);
-
-
-    // We now construct a planning context that encapsulate the scene,
-    // the request and the response. We call the planner using this
-    // planning context
-    planning_interface::PlanningContextPtr context = planner_instance->getPlanningContext(planning_scene, req, res.error_code_);
-    context->solve(res);
-    if (res.error_code_.val != res.error_code_.SUCCESS)
-    {
-        ROS_ERROR("Could not compute plan successfully");
-        return false;
-    }
-
-    moveit_msgs::MotionPlanResponse response;
-    res.getMessage(response);*/
-
-
 }
+
+map<string, geometry_msgs::Vector3> Roboy::getCoordinates()
+{
+    tf::TransformListener listener;
+    ros::Rate rate(10.0);
+    map<string, geometry_msgs::Vector3> positions;
+
+    for (auto const& k : keyNames) {
+
+        cout << "Getting Transform for key " << k << endl;
+
+        tf::StampedTransform trans;
+        try {
+            listener.lookupTransform(k, "body", ros::Time(0), trans);
+        }
+        catch (tf::TransformException ex) {
+            ROS_WARN_THROTTLE(1, "%s", ex.what());
+        }
+
+        geometry_msgs::Vector3 typeCast;
+        typeCast.x = trans.getOrigin().x();
+        typeCast.y = trans.getOrigin().y();
+        typeCast.z = trans.getOrigin().z();
+        positions[k] = typeCast;
+    }
+
+    return positions;
+}
+
 
 void update(controller_manager::ControllerManager *cm) {
     ros::Time prev_time = ros::Time::now();
@@ -488,7 +427,6 @@ int main(int argc, char *argv[]) {
 
     controller_manager::ControllerManager cm(&robot);
 
-    // we need an additional update thread, otherwise the controllers won't switch
     thread update_thread(update, &cm);
 
     ROS_INFO("STARTING ROBOY MAIN LOOP...");
