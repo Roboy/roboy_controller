@@ -304,21 +304,12 @@ void Roboy::precomputeTrajectories() {
 }
 
 //@TODO
-void Roboy::getStick() {
+void closeHand() {
 
-    stick.x = 0.1;
-    stick.y = 0.1;
-    stick.z = 0.1;
-    stick.yaw = 0.1;
-    stick.pitch = 0.1;
-    stick.roll = 0.1;
-    ROS_WARN("Stick Position and Rotation Updated");
 }
 
+
 void Roboy::grabStick() {
-    getStick();
-    std::chrono::milliseconds timespan(2000);
-    std::this_thread::sleep_for(timespan);
 
     ROS_WARN("GrabberBabber");
     read();
@@ -344,6 +335,7 @@ void Roboy::grabStick() {
             }
         }
     }
+    *target_pos["palm"] = keyStates["stick_left"];
     write();
 }
 

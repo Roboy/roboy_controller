@@ -167,7 +167,7 @@ private:
         float roll;
     } stick;
 
-    void getStick();
+    void closeHand();
 
     void precomputeTrajectories();
 
@@ -214,7 +214,8 @@ private:
                                   "G_sharp_2",
                                   "F_sharp_2",
                                   "A_sharp_2",
-                                  "stick"
+                                  "stick_left",
+                                  "stick_right"
                               };
 };
 
