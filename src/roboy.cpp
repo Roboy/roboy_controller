@@ -341,7 +341,7 @@ void Roboy::grabStick() {
 
 vector<double> Roboy::getTrajectory(geometry_msgs::Vector3 targetPosition, vector<double> targetRotation) {
 
-    string end_effektor = "palm";
+    string end_effektor = "hand";//palm
 
     int type = 0;
 
