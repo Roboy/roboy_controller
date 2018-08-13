@@ -35,15 +35,17 @@
 #include <Eigen/Dense>
 
 #include <string>
+#include "std_msgs/String.h"
 
 using namespace std;
 using namespace Eigen;
 
 //! enum for state machine
 typedef enum {
-    WaitForInitialize,
-    SetpointControl,
-    TrajectoryControl
+    Initialize,
+    WaitForInput,
+    MoveToKey,
+    HitKey
 } ActionState;
 
 class Roboy : public hardware_interface::RobotHW {
@@ -153,9 +155,11 @@ private:
 
     //! state strings describing each state
     std::map<ActionState, std::string> state_strings = {
-        {WaitForInitialize, "Waiting for initialization of controllers"},
-        {SetpointControl, "Setpoint Control"},
-        {TrajectoryControl, "Trajectory Control"}
+        {Initialize, "Initialization of controllers and Environment"},
+        {WaitForInput, "Waiting for change in the key ros parameter"},
+        {MoveToKey, "Moving to specified key"},
+        {HitKey, "Executing hit motion"},
+
     };
 
     struct stick {
@@ -168,6 +172,8 @@ private:
     } stick;
 
     void closeHand();
+
+    void flickWrist();
 
     void precomputeTrajectories();
 
@@ -217,5 +223,9 @@ private:
                                   "stick_left",
                                   "stick_right"
                               };
+
+    void detectHit(const std_msgs::String::ConstPtr& msg);
+
+    string keyHit = "null";
 };
 

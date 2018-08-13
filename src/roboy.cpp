@@ -15,6 +15,7 @@
 #include <cstdlib>
 #include <map>
 #include <tf/transform_listener.h>
+#include "std_msgs/String.h"
 
 using namespace std;
 
@@ -60,6 +61,10 @@ Roboy::Roboy() {
         target_vel[endeffector] = &caspr.back()->target_vel;
         str << endeffector << endl;
     }
+
+    ros::NodeHandle n;
+    ros::Subscriber sub = n.subscribe("xylophone/hitdetection", 1, &Roboy::detectHit, this);
+
     ROS_INFO_STREAM(str.str());
 }
 
@@ -150,44 +155,42 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
 
     // Control loop
     ros::Time prev_time = ros::Time::now();
+    string keyName;
 
-    currentState = WaitForInitialize;
+    currentState = Initialize;
 
     while (ros::ok()) {
         ROS_INFO_THROTTLE(5, "%s", state_strings[currentState].c_str());
         switch (currentState) {
-        case WaitForInitialize: {
+        case Initialize: {
             ROS_WARN("Waiting For Roboy to get ready");
 
             thread grab_thread(&Roboy::grabStick, this);
 
             precomputeTrajectories();
 
-            ROS_WARN("Precomputing finished, waiting for stick grabbery");
+            ROS_WARN("Precomputing finished, waiting for stick");
 
             grab_thread.join();
-
-            ROS_WARN("It's a joined venture");
 
             prev_time = ros::Time::now();
             NextState(currentState);
             break;
         }
-        case SetpointControl: {
+        case WaitForInput: {
             ROS_WARN("SetpointControl");
             const ros::Time time = ros::Time::now();
             const ros::Duration period = time - prev_time;
 
             read();
 
-            string keyName;
             nh->getParam("/key", keyName);
 
             if (keyStates.find(keyName) == keyStates.end()) {
-                ROS_WARN("Unknown Key");
+                break;
             }
             else {
-                *target_pos["palm"] = keyStates[keyName];
+                NextState(currentState);
             }
 
             write();
@@ -195,37 +198,46 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
             prev_time = time;
             break;
         }
-        case TrajectoryControl: {
-            ROS_WARN("TrajectoryControl");
-            read();
-            for (auto casp : caspr) {
-                if (casp->new_trajectory) {
-                    casp->trajectory_index = 0;
-                    casp->new_trajectory = false;
-                }
+        case MoveToKey: {
+            ROS_WARN("SetpointControl");
+            const ros::Time time = ros::Time::now();
+            const ros::Duration period = time - prev_time;
 
-                if (casp->trajectory_index >= casp->trajectory.joint_trajectory.points.size()) {
-                    *target_pos[casp->end_effektor_name] = casp->trajectory.joint_trajectory.points[casp->trajectory_index].positions;
-                    *target_vel[casp->end_effektor_name] = casp->trajectory.joint_trajectory.points[casp->trajectory_index].velocities;
-                }
+            read();
+
+            *target_pos["palm"] = keyStates[keyName];
+
+            for (auto casp : caspr) {
 
                 double diffnorm = 0;
                 for (int i = 0; i < target_pos.size(); i++)
                     diffnorm += pow(target_pos[casp->end_effektor_name]->at(i) - casp->joint_pos[i], 2.0);
                 diffnorm = sqrt(diffnorm);
                 if (diffnorm < 0.1) {
-                    if (casp->trajectory_index < casp->trajectory.joint_trajectory.points.size()) {
-                        ROS_INFO_STREAM_THROTTLE(3, casp->end_effektor_name << " trajectory setpoint #" << casp->trajectory_index << " reached with error " << diffnorm);
-                        casp->trajectory_index++;
-                    }
+                    ROS_INFO("Reached target position");
+                    nh->setParam("/key", "null");
+                    NextState(currentState);
                 }
             }
+
             write();
+
+            prev_time = time;
+            break;
+        }
+        case HitKey: {
+
+            int iter = 0;
+            while (keyHit != keyName && iter < 10) {
+                ROS_WARN("Waiting for Key to be Hit");
+                std::this_thread::sleep_for (std::chrono::seconds(1));
+            }
+
+            keyHit = "null";
+            NextState(currentState);
             break;
         }
         }
-        // get next state from state machine
-        currentState = NextState(currentState);
     }
 }
 
@@ -264,54 +276,36 @@ bool Roboy::stopControllers(vector<string> controllers) {
 ActionState Roboy::NextState(ActionState s) {
     ActionState newstate;
     switch (s) {
-    case WaitForInitialize:
-        newstate = SetpointControl;
+    case Initialize:
+        newstate = WaitForInput;
         break;
-    case SetpointControl:
-        newstate = SetpointControl;
+    case WaitForInput:
+        newstate = MoveToKey;
         break;
-    case TrajectoryControl:
-        newstate = TrajectoryControl;
+    case MoveToKey:
+        newstate = HitKey;
+        break;
+    case HitKey:
+        newstate = WaitForInput;
         break;
     }
+
     return newstate;
 }
 
 //@TODO
-void Roboy::precomputeTrajectories() {
-    map<string, geometry_msgs::Vector3> positions = getCoordinates();
+void Roboy::closeHand() {
 
-    geometry_msgs::Vector3 offset;
-    offset.x = 1;
-    offset.y = 1;
-    offset.z = 1;
-
-    vector<double> bestRotation = { 0, 0, 0, 1 };
-
-
-    for (auto const& p : positions)
-    {
-        geometry_msgs::Vector3 offsetPosition;
-        offsetPosition.x = p.second.x + offset.x;
-        offsetPosition.y = p.second.y + offset.y;
-        offsetPosition.z = p.second.z + offset.z;
-
-        vector<double> jointAngles = getTrajectory(offsetPosition, bestRotation);
-
-        keyStates[p.first] = jointAngles;
-
-    }
 }
 
 //@TODO
-void closeHand() {
+void Roboy::flickWrist() {
 
 }
 
 
 void Roboy::grabStick() {
 
-    ROS_WARN("GrabberBabber");
     read();
     for (auto casp : caspr) {
         if (casp->new_trajectory) {
@@ -339,13 +333,66 @@ void Roboy::grabStick() {
     write();
 }
 
+void Roboy::precomputeTrajectories() {
+    map<string, geometry_msgs::Vector3> positions = getCoordinates();
+
+    geometry_msgs::Vector3 offset;
+    offset.x = 1;
+    offset.y = 1;
+    offset.z = 1;
+
+    vector<double> bestRotation = { 0, 0, 0, 1 };
+
+    for (auto const& p : positions)
+    {
+        geometry_msgs::Vector3 offsetPosition;
+        offsetPosition.x = p.second.x + offset.x;
+        offsetPosition.y = p.second.y + offset.y;
+        offsetPosition.z = p.second.z + offset.z;
+
+        vector<double> jointAngles = getTrajectory(offsetPosition, bestRotation);
+
+        keyStates[p.first] = jointAngles;
+    }
+}
+
+map<string, geometry_msgs::Vector3> Roboy::getCoordinates()
+{
+    tf::TransformListener listener;
+    listener.waitForTransform("A_0", "base", ros::Time(), ros::Duration(1.0));
+
+    ros::Rate rate(10.0);
+    map<string, geometry_msgs::Vector3> positions;
+
+    for (auto const& k : keyNames) {
+
+        cout << "Getting Transform for key " << k << endl;
+
+        tf::StampedTransform trans;
+        try {
+            listener.lookupTransform(k, "base", ros::Time(0), trans);
+        }
+        catch (tf::LookupException ex) {
+            ROS_WARN_THROTTLE(1, "%s", ex.what());
+        }
+
+        geometry_msgs::Vector3 typeCast;
+        typeCast.x = trans.getOrigin().getX();
+        typeCast.y = trans.getOrigin().getY();
+        typeCast.z = trans.getOrigin().getZ();
+        cout << typeCast.x << typeCast.y << typeCast.z << endl;
+        positions[k] = typeCast;
+    }
+
+    return positions;
+}
+
 vector<double> Roboy::getTrajectory(geometry_msgs::Vector3 targetPosition, vector<double> targetRotation) {
 
     string end_effektor = "hand";//palm
 
     int type = 0;
 
-    //ros::init(argc, argv, "InverseKinematicsClient");
     ros::NodeHandle nh;
     ros::ServiceClient client = nh.serviceClient<roboy_communication_middleware::InverseKinematics>("/CASPR/" + end_effektor + "/InverseKinematics");
 
@@ -363,44 +410,17 @@ vector<double> Roboy::getTrajectory(geometry_msgs::Vector3 targetPosition, vecto
     else
     {
         ROS_ERROR("Failed to call service InverseKinematicsService");
-        throw std::runtime_error( "Failed to call service InverseKinematicsService" );
     }
-
 
     return srv.response.angles;
-
 }
 
-map<string, geometry_msgs::Vector3> Roboy::getCoordinates()
-{
-    tf::TransformListener listener;
-    ros::Rate rate(10.0);
-    map<string, geometry_msgs::Vector3> positions;
-
-    for (auto const& k : keyNames) {
-
-        cout << "Getting Transform for key " << k << endl;
-
-        tf::StampedTransform trans;
-        try {
-            listener.lookupTransform(k, "body", ros::Time(0), trans);
-        }
-        catch (tf::TransformException ex) {
-            ROS_WARN_THROTTLE(1, "%s", ex.what());
-        }
-
-        geometry_msgs::Vector3 typeCast;
-        typeCast.x = trans.getOrigin().x();
-        typeCast.y = trans.getOrigin().y();
-        typeCast.z = trans.getOrigin().z();
-        positions[k] = typeCast;
-    }
-
-    return positions;
+void Roboy::detectHit(const std_msgs::String::ConstPtr & msg) {
+    keyHit = msg->data.c_str();
 }
 
 
-void update(controller_manager::ControllerManager *cm) {
+void update(controller_manager::ControllerManager * cm) {
     ros::Time prev_time = ros::Time::now();
     ros::Rate rate(10);
     while (ros::ok()) {
