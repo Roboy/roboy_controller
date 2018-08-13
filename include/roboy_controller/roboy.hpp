@@ -42,10 +42,12 @@ using namespace Eigen;
 
 //! enum for state machine
 typedef enum {
-    Initialize,
+    Precompute,
+    GrabStick,
     WaitForInput,
     MoveToKey,
-    HitKey
+    HitKey,
+    IDLE
 } ActionState;
 
 class Roboy : public hardware_interface::RobotHW {
@@ -155,21 +157,13 @@ private:
 
     //! state strings describing each state
     std::map<ActionState, std::string> state_strings = {
-        {Initialize, "Initialization of controllers and Environment"},
+        {Precompute, "Roboy is precomputing trajectories"},
+        {GrabStick, "Roboy is trying to grab the stick"},
         {WaitForInput, "Waiting for change in the key ros parameter"},
         {MoveToKey, "Moving to specified key"},
         {HitKey, "Executing hit motion"},
 
     };
-
-    struct stick {
-        float x;
-        float y;
-        float z;
-        float yaw;
-        float pitch;
-        float roll;
-    } stick;
 
     void closeHand();
 
