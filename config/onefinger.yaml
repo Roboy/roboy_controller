@@ -3,20 +3,20 @@ number_of_motors: 13
 path_planning_pose: 3
 live_tracking: 0
 controller: 3
-max_force: 500
-min_force: 50
+max_force: 10000
+min_force: 0
 qp_print_level: 0
 qp_working_sets: 1000
 planner: "KPIECEkConfigDefault"
-planning_group: "lower_arm_left"
+planning_group: "middle_limb3"
 log: 0
-end_effectors: ["lower_arm_left"]
-lower_arm_left:
+end_effectors: ["middle_limb3"]
+middle_limb3:
   Kp: 100
   Kd: 10
   target_pos: [0,0,0,0]
   target_vel: [0,0,0,0]
-  
+
 motor0:
   id: 0
   joint_name: motor0
