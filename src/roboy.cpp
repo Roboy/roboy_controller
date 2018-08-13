@@ -17,7 +17,7 @@ Roboy::Roboy() {
     vel = new double[NUMBER_OF_MOTORS_PER_FPGA];
     eff = new double[NUMBER_OF_MOTORS_PER_FPGA];
 
-//    motorStatus_sub = nh->subscribe("/roboy/middleware/MotorStatus", 1, &Roboy::MotorStatus, this);
+    //motorStatus_sub = nh->subscribe("/roboy/middleware/MotorStatus", 1, &Roboy::MotorStatus, this);
 
     spinner = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(0));
     spinner->start();
@@ -53,7 +53,6 @@ Roboy::~Roboy() {
 }
 
 void Roboy::MotorStatus(const roboy_communication_middleware::MotorStatus::ConstPtr &msg) {
-    ROS_INFO_THROTTLE(10, "receiving motor status");
     for (uint motor = 0; motor < msg->position.size(); motor++) {
         pos[motor] = msg->position[motor];
         vel[motor] = msg->velocity[motor];
@@ -111,21 +110,21 @@ bool Roboy::initializeControllers(roboy_communication_middleware::Initialize::Re
     return true;
 }
 
-void Roboy::read() {
+void Roboy::read(ros::Duration period) {
     ROS_DEBUG("read");
     for(auto casp:caspr){
-        casp->update();
+        casp->update(period);
     }
 }
 
-void Roboy::write() {
+void Roboy::write(ros::Duration period) {
     ROS_DEBUG("write");
     for(auto casp:caspr){
         nh->getParam(casp->end_effektor_name + "/Kp", Kp[casp->end_effektor_name]);
         nh->getParam(casp->end_effektor_name + "/Kd", Kd[casp->end_effektor_name]);
         nh->getParam(casp->end_effektor_name + "/target_pos", casp->target_pos);
         nh->getParam(casp->end_effektor_name + "/target_vel", casp->target_vel);
-        casp->updateController(Kp[casp->end_effektor_name],Kd[casp->end_effektor_name]);
+        casp->updateController(Kp[casp->end_effektor_name],Kd[casp->end_effektor_name],period);
     }
 }
 
@@ -139,34 +138,24 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
 
     while (ros::ok()) {
         ROS_INFO_THROTTLE(5, "%s", state_strings[currentState].c_str());
+        const ros::Time time = ros::Time::now();
+        const ros::Duration period = time - prev_time;
         switch (currentState) {
             case WaitForInitialize: {
                 if (!initialized) {
                     // idle
                     continue;
                 } else {
-                    // go to next state
-                    prev_time = ros::Time::now();
                     break;
                 }
             }
             case SetpointControl: {
-                const ros::Time time = ros::Time::now();
-                const ros::Duration period = time - prev_time;
-
-//                for(auto casp:caspr){
-//                    nh->getParam(casp->end_effektor_name + "/target_pos", casp->target_pos);
-//                    nh->getParam(casp->end_effektor_name + "/target_vel", casp->target_vel);
-//                }
-
-                read();
-                write();
-
-                prev_time = time;
+                read(period);
+                write(period);
                 break;
             }
             case TrajectoryControl: {
-                read();
+                read(period);
                 for(auto casp:caspr){
                     if(casp->new_trajectory){
                         casp->trajectory_index = 0;
@@ -189,12 +178,13 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
                         }
                     }
                 }
-                write();
+                write(period);
                 break;
             }
         }
         // get next state from state machine
         currentState = NextState(currentState);
+        prev_time = time;
     }
 }
 

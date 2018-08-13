@@ -59,12 +59,12 @@ public:
     /**
 	 * Read from hardware
 	 */
-    void read();
+    void read(ros::Duration period);
 
     /**
      * Write to Hardware
      */
-    void write();
+    void write(ros::Duration period);
 
     /**
      * This is the main loop
