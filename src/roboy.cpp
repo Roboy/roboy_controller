@@ -156,6 +156,7 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
     // Control loop
     ros::Time prev_time = ros::Time::now();
     string keyName;
+    int iter = 0;
 
     currentState = Initialize;
 
@@ -178,7 +179,7 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
             break;
         }
         case WaitForInput: {
-            ROS_WARN("SetpointControl");
+            ROS_WARN("Waiting for Input");
             const ros::Time time = ros::Time::now();
             const ros::Duration period = time - prev_time;
 
@@ -199,7 +200,7 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
             break;
         }
         case MoveToKey: {
-            ROS_WARN("SetpointControl");
+            ROS_WARN("Moving to Key");
             const ros::Time time = ros::Time::now();
             const ros::Duration period = time - prev_time;
 
@@ -226,15 +227,30 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
             break;
         }
         case HitKey: {
+            ROS_WARN("Trying to hit Key");
+            const ros::Time time = ros::Time::now();
+            const ros::Duration period = time - prev_time;
 
-            int iter = 0;
-            while (keyHit != keyName && iter < 10) {
-                ROS_WARN("Waiting for Key to be Hit");
-                std::this_thread::sleep_for (std::chrono::seconds(1));
+            for (auto casp : caspr) {
+                //change
+                if (casp->end_effektor_name == "wrist")
+                    casp->target_vel = {1.0, 1.0, 1.0, 1.0};
             }
 
-            keyHit = "null";
-            NextState(currentState);
+            if (keyHit == keyName || iter > 10) {
+                keyHit = "null";
+                NextState(currentState);
+                for (auto casp : caspr) {
+                    //change
+                    if (casp->end_effektor_name == "wrist")
+                        casp->target_vel = {0.0, 0.0, 0.0, 0.0};
+                }
+            }
+
+            std::this_thread::sleep_for (std::chrono::seconds(1));
+            write();
+
+            prev_time = time;
             break;
         }
         }
@@ -295,42 +311,50 @@ ActionState Roboy::NextState(ActionState s) {
 
 //@TODO
 void Roboy::closeHand() {
-
-}
-
-//@TODO
-void Roboy::flickWrist() {
-
+    //change
+    vector<string> fingers = {    "C_0",
+                                  "E_0",
+                                  "C_sharp_2",
+                                  "G_sharp_0",
+                                  "G_sharp_2",
+                                  "F_sharp_2",
+                                  "A_sharp_2",
+                                  "stick_left",
+                                  "stick_right"
+                             };
+    for (auto casp : caspr) {
+        for (auto const& f : fingers) {
+            if (casp->end_effektor_name == f)
+                casp->target_vel = {1.0, 1.0, 1.0, 1.0};
+        }
+    }
 }
 
 
 void Roboy::grabStick() {
 
+    ROS_WARN("Moving to Key");
     read();
-    for (auto casp : caspr) {
-        if (casp->new_trajectory) {
-            casp->trajectory_index = 0;
-            casp->new_trajectory = false;
-        }
 
-        if (casp->trajectory_index >= casp->trajectory.joint_trajectory.points.size()) {
-            *target_pos[casp->end_effektor_name] = casp->trajectory.joint_trajectory.points[casp->trajectory_index].positions;
-            *target_vel[casp->end_effektor_name] = casp->trajectory.joint_trajectory.points[casp->trajectory_index].velocities;
-        }
+    while (1) {
+        *target_pos["palm"] = keyStates["stick_left"];
 
-        double diffnorm = 0;
-        for (int i = 0; i < target_pos.size(); i++)
-            diffnorm += pow(target_pos[casp->end_effektor_name]->at(i) - casp->joint_pos[i], 2.0);
-        diffnorm = sqrt(diffnorm);
-        if (diffnorm < 0.1) {
-            if (casp->trajectory_index < casp->trajectory.joint_trajectory.points.size()) {
-                ROS_INFO_STREAM_THROTTLE(3, casp->end_effektor_name << " trajectory setpoint #" << casp->trajectory_index << " reached with error " << diffnorm);
-                casp->trajectory_index++;
+        for (auto casp : caspr) {
+
+            double diffnorm = 0;
+            for (int i = 0; i < target_pos.size(); i++)
+                diffnorm += pow(target_pos[casp->end_effektor_name]->at(i) - casp->joint_pos[i], 2.0);
+            diffnorm = sqrt(diffnorm);
+            if (diffnorm < 0.1) {
+                ROS_INFO("Reached target position");
+                break;
             }
         }
+
+        write();
     }
-    *target_pos["palm"] = keyStates["stick_left"];
-    write();
+
+    closeHand();
 }
 
 void Roboy::precomputeTrajectories() {
@@ -350,7 +374,17 @@ void Roboy::precomputeTrajectories() {
         offsetPosition.y = p.second.y + offset.y;
         offsetPosition.z = p.second.z + offset.z;
 
-        vector<double> jointAngles = getTrajectory(offsetPosition, bestRotation);
+        vector<double> jointAngles;
+
+        if (p.first == "stick_left" || p.first == "stick_right"){
+
+            //change
+            std::vector<double> stickRotation = { 0, 0, 0, 1 };
+            jointAngles = getTrajectory(offsetPosition, stickRotation);
+        }
+        else {
+        jointAngles = getTrajectory(offsetPosition, bestRotation);
+        }
 
         keyStates[p.first] = jointAngles;
     }

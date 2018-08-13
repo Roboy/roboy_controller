@@ -173,8 +173,6 @@ private:
 
     void closeHand();
 
-    void flickWrist();
-
     void precomputeTrajectories();
 
     vector<double> getTrajectory(geometry_msgs::Vector3 targetPosition, vector<double> targetRotation);
