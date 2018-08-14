@@ -59,7 +59,5 @@
           launch-prefix="gdb -ex run"
     />
 
-    <node name="gesture_server" pkg="roboy_hand" type="gesture_execution_server" />
-    <node name="gesture_client" pkg="roboy_hand" type="gesture_execution_client" />
 
 </launch>
