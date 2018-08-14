@@ -62,7 +62,7 @@ add_dependencies(MuscController
 target_link_libraries(MuscController ${catkin_LIBRARIES})
 
 add_executable(roboy src/roboy.cpp include/roboy_controller/roboy.hpp)
-add_dependencies(roboy roboy_communication_middleware_generate_messages_cpp )
+add_dependencies( roboy roboy_communication_middleware_gencpp )
 target_link_libraries(roboy ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})
 #==============================================================================
 # Installation

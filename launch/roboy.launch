@@ -22,9 +22,11 @@
                     <!-- -x 0.5 -y -0.88 -z 0.07-->
                     <!-- -R 1.571 -P 0 -Y -3.07"-->
     <!--/>-->
+
     <node name="sdf_spawner2" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
           args="-sdf -file $(find roboy_models)/$(arg model_name)/model.sdf -model $(arg model_name)"
     />
+
     <!--&lt;!&ndash;spawn gazebo model with given pose&ndash;&gt;-->
     <!--<include file="$(find timed_roslaunch)/launch/timed_roslaunch.launch">-->
         <!--<arg name="time" value="10" />-->
