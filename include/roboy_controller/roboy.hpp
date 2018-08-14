@@ -132,7 +132,7 @@ private:
     ros::ServiceServer init_srv, record_srv, resetSpring_srv;
 
     map<string,double> Kp, Kd;
-    map<string,vector<double>*> target_pos, target_vel;
+    map<string,VectorXd*> target_pos, target_vel;
     vector<CASPRptr> caspr;
 
     roboy_communication_middleware::RoboyState roboyStateMsg;

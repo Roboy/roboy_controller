@@ -38,8 +38,8 @@ Roboy::Roboy() {
     str << "initialized CASPR controllers for endeffectors:" << endl;
     for(const string &endeffector:endeffectors) {
         caspr.push_back(boost::shared_ptr<CASPR>(new CASPR(endeffector, muscInfo)));
-        target_pos[endeffector] = &caspr.back()->target_pos;
-        target_vel[endeffector] = &caspr.back()->target_vel;
+        target_pos[endeffector] = &caspr.back()->q_target;
+        target_vel[endeffector] = &caspr.back()->qd_target;
         str << endeffector << endl;
     }
     ROS_INFO_STREAM(str.str());
@@ -122,8 +122,13 @@ void Roboy::write(ros::Duration period) {
     for(auto casp:caspr){
         nh->getParam(casp->end_effektor_name + "/Kp", Kp[casp->end_effektor_name]);
         nh->getParam(casp->end_effektor_name + "/Kd", Kd[casp->end_effektor_name]);
-        nh->getParam(casp->end_effektor_name + "/target_pos", casp->target_pos);
-        nh->getParam(casp->end_effektor_name + "/target_vel", casp->target_vel);
+        vector<double> target_pos, target_vel;
+        nh->getParam(casp->end_effektor_name + "/target_pos", target_pos);
+        nh->getParam(casp->end_effektor_name + "/target_vel", target_vel);
+        for(int i=0;i<casp->q_target.rows();i++){
+            casp->q_target[i] = target_pos[i];
+            casp->qd_target[i] = target_vel[i];
+        }
         casp->updateController(Kp[casp->end_effektor_name],Kd[casp->end_effektor_name],period);
     }
 }
@@ -163,13 +168,15 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
                     }
 
                     if (casp->trajectory_index >= casp->trajectory.joint_trajectory.points.size()) {
-                        *target_pos[casp->end_effektor_name] = casp->trajectory.joint_trajectory.points[casp->trajectory_index].positions;
-                        *target_vel[casp->end_effektor_name] = casp->trajectory.joint_trajectory.points[casp->trajectory_index].velocities;
+                        for(int i=0; i<target_pos[casp->end_effektor_name]->rows(); i++) {
+                            (*target_pos[casp->end_effektor_name])[i] = casp->trajectory.joint_trajectory.points[casp->trajectory_index].positions[i];
+                            (*target_vel[casp->end_effektor_name])[i] = casp->trajectory.joint_trajectory.points[casp->trajectory_index].velocities[i];
+                        }
                     }
 
                     double diffnorm = 0;
-                    for (int i = 0; i < target_pos.size(); i++)
-                        diffnorm += pow(target_pos[casp->end_effektor_name]->at(i) - casp->joint_pos[i], 2.0);
+                    for (int i = 0; i < target_pos[casp->end_effektor_name]->rows(); i++)
+                        diffnorm += pow((*target_pos[casp->end_effektor_name])[i] - casp->joint_pos[i], 2.0);
                     diffnorm = sqrt(diffnorm);
                     if (diffnorm < 0.1) {
                         if (casp->trajectory_index < casp->trajectory.joint_trajectory.points.size()) {
