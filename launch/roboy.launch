@@ -1,45 +1,45 @@
 <launch>
-    <!--<arg name="model_name" default="roboy_xylophone_left_arm"/>-->
-    <!--<arg name="paused" default="false"/>-->
-    <!--<arg name="use_sim_time" default="false"/>-->
-    <!--<arg name="gui" default="false"/>-->
-    <!--<arg name="headless" default="true"/>-->
-    <!--<arg name="debug" default="false"/>-->
+    <arg name="model_name" default="roboy_xylophone_left_arm"/>
+    <arg name="paused" default="false"/>
+    <arg name="use_sim_time" default="false"/>
+    <arg name="gui" default="false"/>
+    <arg name="headless" default="true"/>
+    <arg name="debug" default="false"/>
 
-    <!--<include file="$(find gazebo_ros)/launch/empty_world.launch">-->
-        <!--<arg name="debug" value="$(arg debug)"/>-->
-        <!--<arg name="gui" value="$(arg gui)"/>-->
-        <!--<arg name="paused" value="$(arg paused)"/>-->
-        <!--<arg name="use_sim_time" value="$(arg use_sim_time)"/>-->
-        <!--<arg name="headless" value="$(arg headless)"/>-->
-        <!--&lt;!&ndash;<arg name="world_name" value="roboy_xylophone.world"/>&ndash;&gt;-->
+    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+        <arg name="debug" value="$(arg debug)"/>
+        <arg name="gui" value="$(arg gui)"/>
+        <arg name="paused" value="$(arg paused)"/>
+        <arg name="use_sim_time" value="$(arg use_sim_time)"/>
+        <arg name="headless" value="$(arg headless)"/>
+        <!--<arg name="world_name" value="roboy_xylophone.world"/>-->
+    </include>
+
+    <param name="planning_plugin" type="string" value="ompl_interface/OMPLPlanner"/>
+
+    <!--<node name="sdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"-->
+          <!--args="-sdf -file $(find roboy_models)/xylophone/model.sdf -model xylophone-->
+                    <!-- -x 0.5 -y -0.88 -z 0.07-->
+                    <!-- -R 1.571 -P 0 -Y -3.07"-->
+    <!--/>-->
+    <node name="sdf_spawner2" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
+          args="-sdf -file $(find roboy_models)/$(arg model_name)/model.sdf -model $(arg model_name)"
+    />
+    <!--&lt;!&ndash;spawn gazebo model with given pose&ndash;&gt;-->
+    <!--<include file="$(find timed_roslaunch)/launch/timed_roslaunch.launch">-->
+        <!--<arg name="time" value="10" />-->
+        <!--<arg name="pkg" value="roboy_simulation" />-->
+        <!--<arg name="file" value="roboy_xylophone.launch" />-->
+        <!--<arg name="value" value="x:=0.0 y:=0.0 z:=0.0 roll:=0 pitch:=0 yaw:=0" />-->
     <!--</include>-->
 
-    <!--<param name="planning_plugin" type="string" value="ompl_interface/OMPLPlanner"/>-->
-
-    <!--&lt;!&ndash;<node name="sdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"&ndash;&gt;-->
-          <!--&lt;!&ndash;args="-sdf -file $(find roboy_models)/xylophone/model.sdf -model xylophone&ndash;&gt;-->
-                    <!--&lt;!&ndash; -x 0.5 -y -0.88 -z 0.07&ndash;&gt;-->
-                    <!--&lt;!&ndash; -R 1.571 -P 0 -Y -3.07"&ndash;&gt;-->
-    <!--&lt;!&ndash;/>&ndash;&gt;-->
-    <!--<node name="sdf_spawner2" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"-->
-          <!--args="-sdf -file $(find roboy_models)/$(arg model_name)/model.sdf -model $(arg model_name)"-->
-    <!--/>-->
-    <!--&lt;!&ndash;&lt;!&ndash;spawn gazebo model with given pose&ndash;&gt;&ndash;&gt;-->
-    <!--&lt;!&ndash;<include file="$(find timed_roslaunch)/launch/timed_roslaunch.launch">&ndash;&gt;-->
-        <!--&lt;!&ndash;<arg name="time" value="10" />&ndash;&gt;-->
-        <!--&lt;!&ndash;<arg name="pkg" value="roboy_simulation" />&ndash;&gt;-->
-        <!--&lt;!&ndash;<arg name="file" value="roboy_xylophone.launch" />&ndash;&gt;-->
-        <!--&lt;!&ndash;<arg name="value" value="x:=0.0 y:=0.0 z:=0.0 roll:=0 pitch:=0 yaw:=0" />&ndash;&gt;-->
-    <!--&lt;!&ndash;</include>&ndash;&gt;-->
-
     <!--load robot description onto parameter server-->
-    <include file="$(optenv CONFIG_PATH /home/roboy/workspace/roboy_middleware/src/roboy_moveit_configs)/$(arg model_name)_moveit_config/launch/planning_context.launch">
+    <include file="$(optenv CONFIG_PATH /home/stefanwalke/Documents/Roboy/ss18_xylophone_playing/src/roboy_moveit_configs)/$(arg model_name)_moveit_config/launch/planning_context.launch">
         <arg name="load_robot_description" value="true"/>
     </include>
 
     <!--start path planning-->
-    <include file="$(optenv CONFIG_PATH /home/roboy/workspace/roboy_middleware/src/roboy_moveit_configs)/$(arg model_name)_moveit_config/launch/move_group.launch">
+    <include file="$(optenv CONFIG_PATH /home/stefanwalke/Documents/Roboy/ss18_xylophone_playing/src/roboy_moveit_configs)/$(arg model_name)_moveit_config/launch/move_group.launch">
         <arg name="allow_trajectory_execution" value="false"/>
     </include>
 
@@ -58,9 +58,8 @@
           args="$(arg model_name)"
           launch-prefix="gdb -ex run"
     />
-</launch>
-        <!--launch-prefix="gdb -ex run"-->
-        <!--launch-prefix="gdb -ex run"-->
-        <!-- FOR DEBUGGING USE THIS launch-prefix="xterm -e gdb -se devel/lib/myo_master/multiJoint" FOR VALGRIND USE THIS launch-prefix="valgrind -log-file=/home/roboy/workspace/ros_hierarchy/valgrind.log -leak-check=full"-->
 
-        <!-- args="-c /home/roboy/workspace/roboy-ros-control/src/roboy_powerlink/powerlink/output/mnobd.cdc"-->
+    <node name="gesture_server" pkg="roboy_hand" type="gesture_execution_server" />
+    <node name="gesture_client" pkg="roboy_hand" type="gesture_execution_client" />
+
+</launch>
