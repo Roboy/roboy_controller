@@ -88,6 +88,8 @@ namespace gazebo
 				boost::bind(&HitDetectionPlugin::OnUpdate, this, _1));
 
 
+			this->model->SetGravityMode(0);
+
 		}
 
 
@@ -111,7 +113,7 @@ namespace gazebo
 				tf::Quaternion q;
 				q.setRPY(0, 0, 0);
 				transform.setRotation(q);
-				br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "xylophone", link_name));
+				br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", link_name));
 
 				//ROS_INFO_STREAM("  " << link_name<< " "<<link->GetWorldPose());
 			}
@@ -192,10 +194,11 @@ namespace gazebo
 		/// gets and sets coords for xylophone based on values from DartTracker publisher
 		void setXylophonePose()
 		{
+			return;
 			//blocking fct: waits for something / anything to get published on tf topic to work on reliable data later on
 			//for now, random frames from roboy's model chosen
 			//returns bool -> true if received, false if timeout
-			listener.waitForTransform("xylophone", "world", ros::Time(), ros::Duration(1.0));
+			listener.waitForTransform("xylophone", "world", ros::Time(), ros::Duration(.0));
 
 			std::cout << "Getting Transform for xylophone \n";
 			tf::StampedTransform xylophone_world_pos;

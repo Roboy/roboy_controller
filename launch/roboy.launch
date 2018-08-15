@@ -17,20 +17,14 @@
 
     <param name="planning_plugin" type="string" value="ompl_interface/OMPLPlanner"/>
 
-    <!--<node name="sdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"-->
-          <!--args="-sdf -file $(find roboy_models)/xylophone/model.sdf -model xylophone-->
-                    <!-- -x 0.5 -y -0.88 -z 0.07-->
-                    <!-- -R 1.571 -P 0 -Y -3.07"-->
-    <!--/>-->
-
     <node name="sdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
-          args="-sdf -file $(find roboy_models)/$(arg model_name)/model.sdf -model $(arg model_name)"
+          args="-sdf -file $(find roboy_models)/xylophone/model.sdf -model xylophone
+                    -x 0 -y -0.5 -z 0.1
+                    -R 1.571 -P 0 -Y -3.07"
     />
 
     <node name="sdf_spawner2" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
-          args="-sdf -file $(find roboy_models)/xylophone/model.sdf -model xylophone
-                 -x 0.5 -y -0.81 -z 0.16
-                 -R 1.571 -P 0 -Y -3.0"
+          args="-sdf -file $(find roboy_models)/$(arg model_name)/model.sdf -model $(arg model_name)"
     />
 
     <!--&lt;!&ndash;spawn gazebo model with given pose&ndash;&gt;-->
@@ -42,12 +36,12 @@
     <!--</include>-->
 
     <!--load robot description onto parameter server-->
-    <include file="$(optenv CONFIG_PATH /home/roboy/workspace/ss18_xylophone_playing/src/roboy_moveit_configs)/$(arg model_name)_moveit_config/launch/planning_context.launch">
+    <include file="$(optenv CONFIG_PATH /home/stefanwalke/Documents/Roboy/ss18_xylophone_playing/src/roboy_moveit_configs)/$(arg model_name)_moveit_config/launch/planning_context.launch">
         <arg name="load_robot_description" value="true"/>
     </include>
 
     <!--start path planning-->
-    <include file="$(optenv CONFIG_PATH /home/roboy/workspace/ss18_xylophone_playing/src/roboy_moveit_configs)/$(arg model_name)_moveit_config/launch/move_group.launch">
+    <include file="$(optenv CONFIG_PATH /home/stefanwalke/Documents/Roboy/ss18_xylophone_playing/src/roboy_moveit_configs)/$(arg model_name)_moveit_config/launch/move_group.launch">
         <arg name="allow_trajectory_execution" value="false"/>
     </include>
 

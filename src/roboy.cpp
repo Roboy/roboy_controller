@@ -168,6 +168,8 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
         ROS_INFO_THROTTLE(5, "%s", state_strings[currentState].c_str());
         switch (currentState) {
         case Precompute: {
+            std::this_thread::sleep_for (std::chrono::seconds(30));
+
             precomputeTrajectories();
             currentState = NextState(currentState);
             break;
@@ -414,7 +416,7 @@ map<string, geometry_msgs::Vector3> Roboy::getCoordinates()
         tf::StampedTransform key_world_pos;
         try {
             //todo which target frame should be used? frame order should be: world->xylophone->key
-            listener.lookupTransform("world", k, ros::Time(0), key_world_pos);
+            listener.lookupTransform("palm", "torso", ros::Time(0), key_world_pos);
         }
         catch (tf::LookupException ex) {
             ROS_WARN_THROTTLE(1, "%s", ex.what());
@@ -471,7 +473,6 @@ vector<double> Roboy::getTrajectory(geometry_msgs::Vector3 targetPosition, vecto
 }
 
 void Roboy::detectHit(const std_msgs::String::ConstPtr & msg) {
-    keyHit = msg->data.c_str();
     keyHit = msg->data.c_str();
 }
 
