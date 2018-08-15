@@ -168,6 +168,8 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
         ROS_INFO_THROTTLE(5, "%s", state_strings[currentState].c_str());
         switch (currentState) {
         case Precompute: {
+            nh->setParam("/controller", 1);
+
             std::this_thread::sleep_for (std::chrono::seconds(30));
 
             precomputeTrajectories();
@@ -405,7 +407,7 @@ map<string, geometry_msgs::Vector3> Roboy::getCoordinates()
     tf::TransformListener listener;
     //blocking fct: waits for something / anything to get published on tf topic to work on reliable data later on
     //for now, random frames from roboy's model chosen
-    listener.waitForTransform("A_0", "base", ros::Time(), ros::Duration(1.0));
+    listener.waitForTransform("A_0", "base", ros::Time(), ros::Duration(10.0));
 
     map<string, geometry_msgs::Vector3> positions;
 
@@ -416,7 +418,7 @@ map<string, geometry_msgs::Vector3> Roboy::getCoordinates()
         tf::StampedTransform key_world_pos;
         try {
             //todo which target frame should be used? frame order should be: world->xylophone->key
-            listener.lookupTransform("palm", "torso", ros::Time(0), key_world_pos);
+            listener.lookupTransform(k, "joint_hip", ros::Time(0), key_world_pos);
         }
         catch (tf::LookupException ex) {
             ROS_WARN_THROTTLE(1, "%s", ex.what());
@@ -439,9 +441,9 @@ vector<double> Roboy::getTrajectory(geometry_msgs::Vector3 targetPosition, vecto
 
     int type = 0;
 
-    targetPosition.x = 0.9;
+/*    targetPosition.x = 0.9;
     targetPosition.y = 0.0;
-    targetPosition.z = 0.5;
+    targetPosition.z = 0.5;*/
     targetRotation = {0, 1, 0, 0};
 
     ros::NodeHandle nh;
