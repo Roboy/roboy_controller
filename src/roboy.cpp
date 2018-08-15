@@ -146,10 +146,6 @@ void Roboy::write() {
     for (auto casp : caspr) {
         nh->getParam(casp->end_effektor_name + "/Kp", Kp[casp->end_effektor_name]);
         nh->getParam(casp->end_effektor_name + "/Kd", Kd[casp->end_effektor_name]);
-        if (currentState == IDLE) {
-            nh->getParam(casp->end_effektor_name + "/target_pos", casp->target_pos);
-            nh->getParam(casp->end_effektor_name + "/target_vel", casp->target_vel);
-        }
         casp->updateController(Kp[casp->end_effektor_name], Kd[casp->end_effektor_name]);
     }
 }
@@ -162,32 +158,28 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
     ros::Time prev_time = ros::Time::now();
     string keyName;
 
-
-
     int iter = 0;
 
     currentState = Precompute;
+
+    for (auto casp : caspr) {
+        nh->getParam(casp->end_effektor_name + "/target_pos", casp->target_pos);
+        nh->getParam(casp->end_effektor_name + "/target_vel", casp->target_vel);
+    }
 
     while (ros::ok()) {
         ROS_INFO_THROTTLE(5, "%s", state_strings[currentState].c_str());
         switch (currentState) {
         case Precompute: {
 
-            nh->setParam("/controller", 1);
-            //nh->setParam("/palm/Kd", 5);
-            //nh->setParam("/palm/Kp", 50);
-
             precomputeTrajectories();
-
-            std::this_thread::sleep_for (std::chrono::seconds(10));
-
 
             for (auto const& k : keyNames) {
 
                 cout << "Set Target for key " << k << endl;
 
                 for (int i = 0; i < 7; i++) {
-                    cout << keyStates[k][i] << " | ";
+                    cout << keyStates[k][i] << ",";
                 }
                 cout << endl;
             }
@@ -196,7 +188,7 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
             break;
         }
         case GrabStick: {
-            ROS_WARN("Waiting For Roboy to get ready");
+            /*ROS_WARN("Waiting For Roboy to get ready");
             const ros::Time time = ros::Time::now();
             const ros::Duration period = time - prev_time;
             read();
@@ -221,16 +213,18 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
 
             write();
 
-            prev_time = ros::Time::now();
+            prev_time = ros::Time::now();*/
 
             break;
         }
         case WaitForInput: {
-            ROS_WARN("Waiting for Input");
+
+            ROS_WARN_THROTTLE(1, "Waiting for Input");
             const ros::Time time = ros::Time::now();
             const ros::Duration period = time - prev_time;
 
             read();
+            write();
 
             nh->getParam("/key", keyName);
 
@@ -238,16 +232,14 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
                 break;
             }
             else {
-                currentState = NextState(currentState);
+                currentState = IDLE;//NextState(currentState);
             }
-
-            write();
 
             prev_time = time;
             break;
         }
         case MoveToKey: {
-            ROS_WARN("Moving to Key");
+            ROS_WARN_THROTTLE(1,"Moving to Key");
             const ros::Time time = ros::Time::now();
             const ros::Duration period = time - prev_time;
 
@@ -256,21 +248,21 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
             *target_pos["palm"] = keyStates[keyName];
 
             for (auto casp : caspr) {
+                if (casp->end_effektor_name == "palm") {
+                    double diffnorm = 0;
+                    for (int i = 0; i < target_pos.size(); i++) {
 
-                double diffnorm = 0;
-                for (int i = 0; i < target_pos.size(); i++) {
-                    if (casp->end_effektor_name == "palm") {
                         diffnorm += pow(target_pos["palm"]->at(i) - casp->joint_pos[i], 2.0);
-                        cout << casp->end_effektor_name << ' ' << target_pos["palm"]->at(i) << ' ' << casp->joint_pos[i] << endl;
+                        //cout << casp->end_effektor_name << ' ' << target_pos["palm"]->at(i) << ' ' << casp->joint_pos[i] << endl;
                     }
-                }
 
-                cout << diffnorm << endl;
-                diffnorm = sqrt(diffnorm);
-                if (diffnorm < 0.1) {
-                    ROS_INFO("Reached target position");
-                    nh->setParam("/key", "null");
-                    currentState = NextState(currentState);
+                    ROS_INFO_THROTTLE(1,"error %f", diffnorm);
+                    diffnorm = sqrt(diffnorm);
+                    if (diffnorm < 0.1) {
+                        ROS_INFO("Reached target position");
+                        nh->setParam("/key", "null");
+                        currentState = NextState(currentState);
+                    }
                 }
             }
 
@@ -311,6 +303,10 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
             const ros::Duration period = time - prev_time;
 
             read();
+            for (auto casp : caspr) {
+                nh->getParam(casp->end_effektor_name + "/target_pos", casp->target_pos);
+                nh->getParam(casp->end_effektor_name + "/target_vel", casp->target_vel);
+            }
             write();
 
             prev_time = time;
@@ -398,9 +394,9 @@ void Roboy::precomputeTrajectories() {
     geometry_msgs::Vector3 offset;
     offset.x = 0.0;
     offset.y = 0.0;
-    offset.z = 0.0;
+    offset.z = 0.2;
 
-    vector<double> bestRotation = { 1, 0, 0, 0 };
+    vector<double> bestRotation = { 0, -1,0,0 };
 
     for (auto const& p : positions)
     {
@@ -408,7 +404,9 @@ void Roboy::precomputeTrajectories() {
     }
 
     for (int i = 0; i < 10; i++) {
-        std::this_thread::sleep_for (std::chrono::milliseconds(500));
+        //std::this_thread::sleep_for (std::chrono::milliseconds(500));
+        read();
+        write();
         for (auto const& p : positions)
         {
             bool zeros = std::all_of(keyStates[p.first].begin(), keyStates[p.first].end(), [](int i) { return i == 0; });
@@ -424,7 +422,7 @@ void Roboy::precomputeTrajectories() {
 
             if (p.first == "stick_left" || p.first == "stick_right") {
                 //change
-                std::vector<double> stickRotation = { 0, 1, 0, 0 };
+                std::vector<double> stickRotation = { 0.707, 0, 0, 0.707 };
                 jointAngles = getTrajectory(p.second, stickRotation);
             }
             else {
@@ -445,7 +443,7 @@ map<string, geometry_msgs::Vector3> Roboy::getCoordinates()
     tf::TransformListener listener;
     //blocking fct: waits for something / anything to get published on tf topic to work on reliable data later on
     //for now, random frames from roboy's model chosen
-    listener.waitForTransform("stick_left", "joint_hip", ros::Time(), ros::Duration(120.0));
+    listener.waitForTransform("C_0", "world", ros::Time(), ros::Duration(120.0));
 
     map<string, geometry_msgs::Vector3> positions;
 
@@ -456,7 +454,7 @@ map<string, geometry_msgs::Vector3> Roboy::getCoordinates()
         tf::StampedTransform key_world_pos;
         try {
             //todo which target frame should be used? frame order should be: world->xylophone->key
-            listener.lookupTransform("joint_hip", k, ros::Time(0), key_world_pos);
+            listener.lookupTransform("world", k, ros::Time(0), key_world_pos);
         }
         catch (tf::LookupException ex) {
             ROS_WARN_THROTTLE(1, "%s", ex.what());
@@ -495,7 +493,7 @@ vector<double> Roboy::getTrajectory(geometry_msgs::Vector3 targetPosition, vecto
     }
     else
     {
-        std::this_thread::sleep_for (std::chrono::milliseconds(200));
+        //std::this_thread::sleep_for (std::chrono::milliseconds(200));
         vector<double> zeros = {0, 0, 0, 0, 0, 0, 0};
         return zeros;
     }

@@ -211,9 +211,9 @@ private:
                                   "G_sharp_0",
                                   "G_sharp_2",
                                   "F_sharp_2",
-                                  "A_sharp_2",
-                                  "stick_left",
-                                  "stick_right"
+                                  "A_sharp_2"
+                                  // "stick_left",
+                                  // "stick_right"
                               };
 
     void detectHit(const std_msgs::String::ConstPtr& msg);

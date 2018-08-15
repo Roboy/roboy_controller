@@ -20,7 +20,7 @@
     <node name="sdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
           args="-sdf -file $(find roboy_models)/xylophone/model.sdf -model xylophone
                     -x 0.1 -y -0.7 -z 0.15
-                    -R 1.571 -P 0 -Y -3.07"
+                    -R 0 -P 0 -Y -3.07"
     />
 
     <node name="sdf_spawner2" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
@@ -58,7 +58,7 @@
           respawn="false"
           output="screen"
           args="$(arg model_name)"
-          launch-prefix="gdb -ex run"
+          
     />
 </launch>
         <!--launch-prefix="gdb -ex run"-->

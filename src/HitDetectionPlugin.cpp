@@ -132,17 +132,12 @@ namespace gazebo
 				//if(joint_name == "C_0")
 				//{
 				auto accel = GetAcceleration(joint);
-				if (accel > 300)
+				if (accel > 0.1)
 				{
-					while (ros::ok())
-					{
-						std_msgs::String msg;
-						msg.data = joint_name;
+					std_msgs::String msg;
+					msg.data = joint_name;
 
-						hit_detection_pub.publish(msg);
-						ros::spinOnce();
-					//loop_rate.sleep();
-					}
+					hit_detection_pub.publish(msg);
 				}
 				//
 				//}
