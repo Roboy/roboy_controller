@@ -180,9 +180,11 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
 
             *target_pos["palm"] = keyStates["stick_left"];
 
-            /*    double diffnorm = 0;
-                for (int i = 0; i < target_pos.size(); i++)
+            for (auto casp : caspr) {
+                double diffnorm = 0;
+                for (int i = 0; i < target_pos.size(); i++) {
                     diffnorm += pow(target_pos["palm"]->at(i) - casp->joint_pos[i], 2.0);
+                }
                 diffnorm = sqrt(diffnorm);
                 if (diffnorm < 0.1) {
                     ROS_INFO("Reached target position");
@@ -191,7 +193,8 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
                     prev_time = ros::Time::now();
                     currentState = NextState(currentState);
                     break;
-                }*/
+                }
+            }
 
             write();
 
@@ -233,7 +236,7 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
 
                 double diffnorm = 0;
                 for (int i = 0; i < target_pos.size(); i++)
-                    diffnorm += pow(target_pos[casp->end_effektor_name]->at(i) - casp->joint_pos[i], 2.0);
+                    diffnorm += pow(target_pos["palm"]->at(i) - casp->joint_pos[i], 2.0);
                 diffnorm = sqrt(diffnorm);
                 if (diffnorm < 0.1) {
                     ROS_INFO("Reached target position");
