@@ -359,6 +359,7 @@ void Roboy::closeHand() {
     }
 }
 
+//precomputes trajectories to be used later on, uses initially obtained positions
 void Roboy::precomputeTrajectories() {
     map<string, geometry_msgs::Vector3> positions = getCoordinates();
 
@@ -392,31 +393,34 @@ void Roboy::precomputeTrajectories() {
 
 }
 
+
+/// gets coords for xylophone and its keys, is only called once
 map<string, geometry_msgs::Vector3> Roboy::getCoordinates()
 {
     tf::TransformListener listener;
-    //waiting for anything to get published on tf topic
+    //blocking fct: waits for something / anything to get published on tf topic to work on reliable data later on
+    //for now, random frames from roboy's model chosen
     listener.waitForTransform("A_0", "base", ros::Time(), ros::Duration(1.0));
 
-    ros::Rate rate(10.0);
     map<string, geometry_msgs::Vector3> positions;
 
     for (auto const& k : keyNames) {
 
         cout << "Getting Transform for key " << k << endl;
 
-        tf::StampedTransform trans;
+        tf::StampedTransform key_world_pos;
         try {
-            listener.lookupTransform("palm", "torso", ros::Time(0), trans);
+            //todo which target frame should be used? frame order should be: world->xylophone->key
+            listener.lookupTransform("world", k, ros::Time(0), key_world_pos);
         }
         catch (tf::LookupException ex) {
             ROS_WARN_THROTTLE(1, "%s", ex.what());
         }
-
+        //only takes position when defining key pose....
         geometry_msgs::Vector3 typeCast;
-        typeCast.x = trans.getOrigin().getX();
-        typeCast.y = trans.getOrigin().getY();
-        typeCast.z = trans.getOrigin().getZ();
+        typeCast.x = key_world_pos.getOrigin().getX();
+        typeCast.y = key_world_pos.getOrigin().getY();
+        typeCast.z = key_world_pos.getOrigin().getZ();
         cout << typeCast.x << " " << typeCast.y << " " << typeCast.z << endl;
         positions[k] = typeCast;
     }
@@ -464,6 +468,7 @@ vector<double> Roboy::getTrajectory(geometry_msgs::Vector3 targetPosition, vecto
 }
 
 void Roboy::detectHit(const std_msgs::String::ConstPtr & msg) {
+    keyHit = msg->data.c_str();
     keyHit = msg->data.c_str();
 }
 

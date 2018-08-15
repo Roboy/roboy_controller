@@ -17,8 +17,14 @@
 #include "std_msgs/String.h"
 #include "geometry_msgs/Vector3.h"
 #include "geometry_msgs/Vector3.h"
-#include <tf/transform_broadcaster.h>
+
+#include <ignition/math/Pose3.hh>
+#include <ignition/math/Quaternion.hh>
+
+//TF stuff
 #include <tf/tf.h>
+#include <tf/transform_broadcaster.h>
+#include <tf/transform_listener.h>
 
 
 namespace gazebo
@@ -60,10 +66,6 @@ namespace gazebo
 			//ros::Rate loop_rate(10);
 
 
-
-
-
-
 			/*ros::SubscribeOptions so =
 			ros::SubscribeOptions::create<std_msgs::Float32>(
 				"/" + this->model->GetName() + "/HitDetection",
@@ -95,54 +97,56 @@ namespace gazebo
 			tf::TransformBroadcaster br;
 			tf::Transform transform;
 
-			physics::Model_V models = model->GetWorld()->GetModels();
-			for (auto model : models) {
-				std::string model_name = model->GetName();
-				physics::Link_V links = model->GetLinks();
-				//ROS_INFO_STREAM("Model \"" << model_name << "\" links:");
+			//update xylophonepose based on darttracker
+			setXylophonePose();
+
+			std::string model_name = model->GetName();
+			physics::Link_V links = model->GetLinks();
+			//ROS_INFO_STREAM("Model \"" << model_name << "\" links:");
 			// List all links of the model
-				for (auto link : links) {
-					std::string link_name = link->GetName();
-					auto linkPose = link->GetWorldPose().pos;
-					transform.setOrigin( tf::Vector3(linkPose.x, linkPose.y, linkPose.z) );
-					tf::Quaternion q;
-					q.setRPY(0, 0, 0);
-					transform.setRotation(q);
-					br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "xylophone", link_name));
+			for (auto link : links) {
+				std::string link_name = link->GetName();
+				auto linkPose = link->GetWorldPose().pos;
+				transform.setOrigin( tf::Vector3(linkPose.x, linkPose.y, linkPose.z) );
+				tf::Quaternion q;
+				q.setRPY(0, 0, 0);
+				transform.setRotation(q);
+				br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "xylophone", link_name));
 
-					//ROS_INFO_STREAM("  " << link_name<< " "<<link->GetWorldPose());
-				}
-				//ROS_INFO_STREAM("Model \"" << model_name << "\" joints:");
-				physics::Joint_V joints = model->GetJoints();
-            // List all joints of the model
-				for (auto joint : joints) {
-					std::string joint_name = joint->GetName();
-					//std_msgs::String msg;
-					//msg.data = joint_name;
-					// //std::cerr << msg.data;
-					// std::cerr<<joint_name;
-					//std::cerr<<"Publishing";
-					//hit_detection_pub.publish(msg);
-					//if(joint_name == "C_0")
-					//{
-					auto accel = GetAcceleration(joint);
-					if (accel > 300)
+				//ROS_INFO_STREAM("  " << link_name<< " "<<link->GetWorldPose());
+			}
+
+			//ROS_INFO_STREAM("Model \"" << model_name << "\" joints:");
+			physics::Joint_V joints = model->GetJoints();
+			// List all joints of the model
+			for (auto joint : joints) {
+				std::string joint_name = joint->GetName();
+				//std_msgs::String msg;
+				//msg.data = joint_name;
+				// //std::cerr << msg.data;
+				// std::cerr<<joint_name;
+				//std::cerr<<"Publishing";
+				//hit_detection_pub.publish(msg);
+				//if(joint_name == "C_0")
+				//{
+				auto accel = GetAcceleration(joint);
+				if (accel > 300)
+				{
+					while (ros::ok())
 					{
-						while (ros::ok())
-						{
-							std_msgs::String msg;
-							msg.data = joint_name;
+						std_msgs::String msg;
+						msg.data = joint_name;
 
-							hit_detection_pub.publish(msg);
-							ros::spinOnce();
-						//loop_rate.sleep();
-						}
+						hit_detection_pub.publish(msg);
+						ros::spinOnce();
+					//loop_rate.sleep();
 					}
-					//
-					//}
-					//ROS_INFO_STREAM("  " << joint_name);//<<" "<<joint->GetForce(0));
-					//ROS_INFO_STREAM(joint->GetForceTorque(0));
 				}
+				//
+				//}
+				//ROS_INFO_STREAM("  " << joint_name);//<<" "<<joint->GetForce(0));
+				//ROS_INFO_STREAM(joint->GetForceTorque(0));
+
 			}
 			//std::chrono::milliseconds timespan(10000);
     		//std::this_thread::sleep_for(timespan);
@@ -183,10 +187,44 @@ namespace gazebo
 		private: ros::Publisher hit_detection_pub;
 
 
+	private:
 
+		/// gets and sets coords for xylophone based on values from DartTracker publisher
+		void setXylophonePose()
+		{
+			//blocking fct: waits for something / anything to get published on tf topic to work on reliable data later on
+			//for now, random frames from roboy's model chosen
+			//returns bool -> true if received, false if timeout
+			listener.waitForTransform("xylophone", "world", ros::Time(), ros::Duration(1.0));
 
+			std::cout << "Getting Transform for xylophone \n";
+			tf::StampedTransform xylophone_world_pos;
+			try {
+				//todo which target frame should be used? frame order should be: world->xylophone->key
+				listener.lookupTransform("world", "xylophone", ros::Time(0), xylophone_world_pos);
+			}
+			catch (tf::LookupException ex) {
+				ROS_WARN_THROTTLE(1, "%s", ex.what());
+			}
+			//only takes position when defining key pose....
+			const ignition::math::Vector3d *pos= new ignition::math::Vector3d(xylophone_world_pos.getOrigin().getX(), xylophone_world_pos.getOrigin().getY(), xylophone_world_pos.getOrigin().getZ());
+			const ignition::math::Quaterniond *rot = new ignition::math::Quaterniond();
+			const ignition::math::Pose3d pose = ignition::math::Pose3d(*pos, *rot);
 
+			//listener ONLY TRANSPORTS TRANSFORM!! -> no rotation publisher possible (except for if we use a *ros topic*
+			/*
+			pose.rot[0] = xylophone_world_pos.getRotation().getZ();
+			pose.rot[1] = xylophone_world_pos.getOrigin().getZ();
+			pose.rot[2] = xylophone_world_pos.getOrigin().getZ();
+			pose.rot[3] = xylophone_world_pos.getOrigin().getZ();
+			*/
 
+			this->model->SetWorldPose(pose);
+		}
+
+		//subscribes to tf broadcaster (?)
+		tf::TransformListener listener;
 	};
+
 	GZ_REGISTER_MODEL_PLUGIN(HitDetectionPlugin)
 }
