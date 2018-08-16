@@ -43,6 +43,9 @@ Roboy::Roboy() {
         str << endeffector << endl;
     }
     ROS_INFO_STREAM(str.str());
+
+    ros::NodeHandle n;
+    ros::Subscriber sub = n.subscribe("xylophone/hitdetection", 1, &Roboy::detectHit, this);
 }
 
 Roboy::~Roboy() {
@@ -135,11 +138,15 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
     // Control loop
     ros::Time prev_time = ros::Time::now();
 
-    currentState = IDLE;
+/*    currentState = IDLE;
     for (auto casp : caspr) {
         nh->getParam(casp->end_effektor_name + "/target_pos", casp->target_pos);
         nh->getParam(casp->end_effektor_name + "/target_vel", casp->target_vel);
-    }
+    }*/
+    currentState = Precompute;
+    write();
+    vector<double> v = {0.2877185091848563, 0.29086141871888593, 0.8282385691186516, -0.757384650187231, 1.209248215971815, 0.8629362373470855};
+    nh->setParam("/hand_left/target_pos", v);
 
     while (ros::ok()) {
         ROS_INFO_THROTTLE(5, "%s", state_strings[currentState].c_str());
@@ -154,6 +161,11 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
 
                     for (int i = 0; i < 7; i++) {
                         cout << keyStates[k][i] << ",";
+                    }
+                    cout << endl;
+
+                    for (int i = 0; i < 7; i++) {
+                        cout << keyStatesHit[k][i] << ",";
                     }
                     cout << endl;
                 }
@@ -215,12 +227,11 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
 
                 read();
 
-                *target_pos["hand_left"] = keyStates[keyName];
+                nh->setParam("/hand_left/target_pos", keyStates[keyName]);
 
 
                 for (auto casp : caspr) {
                     if (casp->end_effektor_name == "hand_left") {
-                        nh->setParam(casp->end_effektor_name + "/target_pos", *target_pos["hand_left"]);
                         double diffnorm = 0;
                         for (int i = 0; i < target_pos.size(); i++) {
 
@@ -248,23 +259,14 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
                 const ros::Time time = ros::Time::now();
                 const ros::Duration period = time - prev_time;
 
-                for (auto casp : caspr) {
-                    //change
-                    if (casp->end_effektor_name == "hand_left")
-                        casp->target_vel = {0,0,0,0,0,0.1};
-                }
+                nh->setParam("/hand_left/target_pos", keyStatesHit[keyName]);
 
-                if (keyHit == keyName || iter > 1) {
+                if (keyHit == keyName) {
                     keyHit = "null";
+                    nh->setParam("/hand_left/target_pos", keyStates[keyName]);
                     currentState = NextState(currentState);
-                    for (auto casp : caspr) {
-                        //change
-                        if (casp->end_effektor_name == "hand_left")
-                            casp->target_vel = {0,0,0,0,0,0};
-                    }
                 }
 
-                std::this_thread::sleep_for (std::chrono::seconds(1));
                 write();
 
                 prev_time = time;
@@ -345,6 +347,7 @@ ActionState Roboy::NextState(ActionState s) {
 
 //@TODO
 void Roboy::closeHand() {
+    return;
     vector<string> fingers = {    "left_little_limb3",
                                   "left_ring_limb3",
                                   "left_middle_limb3",
@@ -364,9 +367,14 @@ void Roboy::precomputeTrajectories() {
     map<string, geometry_msgs::Point> positions = getCoordinates();
 
     geometry_msgs::Point offset;
-    offset.x = 0.0;
+    offset.x = 0.1;
     offset.y = 0.0;
     offset.z = 0.2;
+
+    geometry_msgs::Point offsetHit;
+    offsetHit.x = 0.1;
+    offsetHit.y = 0.0;
+    offsetHit.z = 0.15;
 
     geometry_msgs::Quaternion targetRotation;
     targetRotation.x = 0;
@@ -374,12 +382,19 @@ void Roboy::precomputeTrajectories() {
     targetRotation.z = -0.7071068;
     targetRotation.w = 0.7071068;
 
+    geometry_msgs::Quaternion targetRotationHit;
+    targetRotationHit.x = 0;
+    targetRotationHit.y = 0.2329019;
+    targetRotationHit.z = -0.6987058;
+    targetRotationHit.w = 0.6764369;
+
     for (auto const& p : positions)
     {
         keyStates[p.first] = {0, 0, 0, 0, 0, 0, 0};
+        keyStatesHit[p.first] = {0, 0, 0, 0, 0, 0, 0};
     }
 
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 2; i++) {
         //std::this_thread::sleep_for (std::chrono::milliseconds(500));
         read();
         write();
@@ -406,6 +421,32 @@ void Roboy::precomputeTrajectories() {
             }
 
             keyStates[p.first] = jointAngles;
+        }
+    }
+
+    for (int i = 0; i < 2; i++) {
+        //std::this_thread::sleep_for (std::chrono::milliseconds(500));
+        read();
+        write();
+        for (auto const& p : positions)
+        {
+            if (p.first == "stick_left" || p.first == "stick_right") {
+                continue;
+            }
+            bool zeros = std::all_of(keyStatesHit[p.first].begin(), keyStatesHit[p.first].end(), [](int i) { return i == 0; });
+            if (!zeros) {
+                continue;
+            }
+            geometry_msgs::Point offsetPositionHit;
+            offsetPositionHit.x = p.second.x + offsetHit.x;
+            offsetPositionHit.y = p.second.y + offsetHit.y;
+            offsetPositionHit.z = p.second.z + offsetHit.z;
+
+            vector<double> jointAngles;
+
+            jointAngles = getTrajectory(offsetPositionHit, targetRotationHit);
+
+            keyStatesHit[p.first] = jointAngles;
         }
     }
 

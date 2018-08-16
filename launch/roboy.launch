@@ -1,5 +1,5 @@
 <launch>
-    <arg name="model_name" default="roboy_xylophone_left_arm"/>
+    <arg name="model_name" default="roboy_xylophone"/>
     <arg name="paused" default="false"/>
     <arg name="use_sim_time" default="false"/>
     <arg name="gui" default="false"/>
