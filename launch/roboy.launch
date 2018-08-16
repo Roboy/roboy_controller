@@ -5,6 +5,7 @@
     <arg name="gui" default="false"/>
     <arg name="headless" default="true"/>
     <arg name="debug" default="false"/>
+    <arg name="xylophone" default="false"/>
 
     <include file="$(find gazebo_ros)/launch/empty_world.launch">
         <arg name="debug" value="$(arg debug)"/>
@@ -17,11 +18,15 @@
 
     <param name="planning_plugin" type="string" value="ompl_interface/OMPLPlanner"/>
 
-    <!--<node name="sdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"-->
-          <!--args="-sdf -file $(find roboy_models)/xylophone/model.sdf -model xylophone-->
-                    <!-- -x 0.5 -y -0.88 -z 0.07-->
-                    <!-- -R 1.571 -P 0 -Y -3.07"-->
-    <!--/>-->
+
+    <group if="$(arg xylophone)">
+        <node name="sdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
+              args="-sdf -file $(find roboy_models)/xylophone/model.sdf -model xylophone
+                      -x 0.5 -y -0.3 -z 0.01
+                      -R 0.0 -P 0 -Y 0"
+        />
+    </group>
+
 
     <node name="sdf_spawner2" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
           args="-sdf -file $(find roboy_models)/$(arg model_name)/model.sdf -model $(arg model_name)"
@@ -29,25 +34,27 @@
 
     <!--&lt;!&ndash;spawn gazebo model with given pose&ndash;&gt;-->
     <!--<include file="$(find timed_roslaunch)/launch/timed_roslaunch.launch">-->
-        <!--<arg name="time" value="10" />-->
-        <!--<arg name="pkg" value="roboy_simulation" />-->
-        <!--<arg name="file" value="roboy_xylophone.launch" />-->
-        <!--<arg name="value" value="x:=0.0 y:=0.0 z:=0.0 roll:=0 pitch:=0 yaw:=0" />-->
+    <!--<arg name="time" value="10" />-->
+    <!--<arg name="pkg" value="roboy_simulation" />-->
+    <!--<arg name="file" value="roboy_xylophone.launch" />-->
+    <!--<arg name="value" value="x:=0.0 y:=0.0 z:=0.0 roll:=0 pitch:=0 yaw:=0" />-->
     <!--</include>-->
 
     <!--load robot description onto parameter server-->
-    <include file="$(optenv CONFIG_PATH /home/stefanwalke/Documents/Roboy/ss18_xylophone_playing/src/roboy_moveit_configs)/$(arg model_name)_moveit_config/launch/planning_context.launch">
+    <include
+            file="$(optenv CONFIG_PATH /home/letrend/workspace/roboy_middleware/src/roboy_moveit_configs)/$(arg model_name)_moveit_config/launch/planning_context.launch">
         <arg name="load_robot_description" value="true"/>
     </include>
 
     <!--start path planning-->
-    <include file="$(optenv CONFIG_PATH /home/stefanwalke/Documents/Roboy/ss18_xylophone_playing/src/roboy_moveit_configs)/$(arg model_name)_moveit_config/launch/move_group.launch">
+    <include
+            file="$(optenv CONFIG_PATH /home/letrend/workspace/roboy_middleware/src/roboy_moveit_configs)/$(arg model_name)_moveit_config/launch/move_group.launch">
         <arg name="allow_trajectory_execution" value="false"/>
     </include>
 
     <node pkg="tf" type="static_transform_publisher" name="static_map" args="0 0 0 0 0 0 1  /world /map  100"/>
 
-    <param name="robot_description_sdf" textfile="$(find roboy_models)/$(arg model_name)/model.sdf" />
+    <param name="robot_description_sdf" textfile="$(find roboy_models)/$(arg model_name)/model.sdf"/>
 
     <!-- Load the parameters to the parameter server from the yaml file-->
     <rosparam file="$(find roboy_controller)/config/$(arg model_name).yaml" command="load"/>
@@ -60,6 +67,6 @@
           args="$(arg model_name)"
           launch-prefix="gdb -ex run"
     />
-
+    <!--launch-prefix="gdb -ex run"-->
 
 </launch>
