@@ -2,7 +2,7 @@ number_of_fpgas: 5
 number_of_motors: 13
 path_planning_pose: 3
 live_tracking: 0
-controller: 3
+controller: 1
 max_force: 500
 min_force: 0
 qp_print_level: 0
