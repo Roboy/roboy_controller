@@ -17,21 +17,14 @@
 
     <param name="planning_plugin" type="string" value="ompl_interface/OMPLPlanner"/>
 
-    <!--<node name="sdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"-->
-          <!--args="-sdf -file $(find roboy_models)/xylophone/model.sdf -model xylophone-->
-                    <!-- -x 0.5 -y -0.88 -z 0.07-->
-                    <!-- -R 1.571 -P 0 -Y -3.07"-->
-    <!--/>-->
-    <node name="sdf_spawner2" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
-          args="-sdf -file $(find roboy_models)/$(arg model_name)/model.sdf -model $(arg model_name)"
+    <node name="sdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
+          args="-sdf -file $(find roboy_models)/xylophone/model.sdf -model xylophone
+                     -x 0.1 -y -0.4 -z 0.15
+                     -R 0.0 -P 0 -Y -3.07"
     />
-    <!--&lt;!&ndash;spawn gazebo model with given pose&ndash;&gt;-->
-    <!--<include file="$(find timed_roslaunch)/launch/timed_roslaunch.launch">-->
-        <!--<arg name="time" value="10" />-->
-        <!--<arg name="pkg" value="roboy_simulation" />-->
-        <!--<arg name="file" value="roboy_xylophone.launch" />-->
-        <!--<arg name="value" value="x:=0.0 y:=0.0 z:=0.0 roll:=0 pitch:=0 yaw:=0" />-->
-    <!--</include>-->
+    <node name="sdf_spawner2" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
+          args="-sdf -file $(find roboy_models)/$(arg model_name)/model.sdf -model $(arg model_name) -J0 1"
+    />
 
     <node pkg="tf" type="static_transform_publisher" name="static_map" args="0 0 0 0 0 0 1  /world /map  100"/>
 
