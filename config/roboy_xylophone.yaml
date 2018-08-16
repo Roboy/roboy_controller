@@ -2,7 +2,7 @@ number_of_fpgas: 5
 number_of_motors: 13
 path_planning_pose: 3
 live_tracking: 0
-controller: 1
+controller: 3
 max_force: 500
 min_force: 0
 qp_print_level: 0
@@ -12,9 +12,9 @@ planning_group: "hand_left"
 log: 0
 end_effectors: ["hand_left"]
 hand_left:
-  Kp: 500
-  Kd: 100
-  target_pos: [0,0,0,0,0,0]
+  Kp: 1000
+  Kd: 50
+  target_pos: [0.2877185091848563, 0.29086141871888593, 0.8282385691186516, -0.757384650187231, 1.209248215971815, 0.8629362373470855]
   target_vel: [0,0,0,0,0,0]
   
 motor0:

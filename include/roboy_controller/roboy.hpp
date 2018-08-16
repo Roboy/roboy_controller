@@ -8,6 +8,7 @@
 #include "roboy_communication_middleware/MotorStatus.h"
 #include "roboy_communication_middleware/ArucoPose.h"
 #include "geometry_msgs/Pose.h"
+#include "std_msgs/String.h"
 #include <roboy_simulation/simulationControl.hpp>
 #include <roboy_simulation/CASPR.hpp>
 
@@ -39,9 +40,12 @@ using namespace Eigen;
 
 //! enum for state machine
 typedef enum {
-    WaitForInitialize,
-    SetpointControl,
-    TrajectoryControl
+    Precompute,
+    GrabStick,
+    WaitForInput,
+    MoveToKey,
+    HitKey,
+    IDLE
 } ActionState;
 
 class Roboy : public hardware_interface::RobotHW {
@@ -151,9 +155,69 @@ private:
 
     //! state strings describing each state
     std::map<ActionState, std::string> state_strings = {
-            {WaitForInitialize, "Waiting for initialization of controllers"},
-            {SetpointControl,       "Setpoint Control"},
-            {TrajectoryControl,         "Trajectory Control"}
+            {Precompute, "Roboy is precomputing trajectories"},
+            {GrabStick, "Roboy is trying to grab the stick"},
+            {WaitForInput, "Waiting for change in the key ros parameter"},
+            {MoveToKey, "Moving to specified key"},
+            {HitKey, "Executing hit motion"},
+
     };
+
+    void closeHand();
+
+    void precomputeTrajectories();
+
+    vector<double> getTrajectory(geometry_msgs::Point targetPosition, geometry_msgs::Quaternion targetRotation);
+
+    map<string, vector<double>> keyStates;
+    string keyName = "null";
+    int iter = 0;
+
+    void grabStick();
+    map<string, geometry_msgs::Point> getCoordinates();
+    vector<string> keyNames = {   "C_3",
+                                  "A_1",
+                                  "A_2",
+                                  "G_2",
+                                  "D_2",
+                                  "H_1",
+                                  "C_2",
+                                  "F_0",
+                                  "H_0",
+                                  "G_0",
+                                  "F_sharp_1",
+                                  "G_1",
+                                  "C_sharo_0",
+                                  "C_sharp_1",
+                                  "G_sharp_1",
+                                  "E_2",
+                                  "E_1",
+                                  "F_sharp_0",
+                                  "D_sharp_0",
+                                  "D_sharp_2",
+                                  "F_2",
+                                  "F_1",
+                                  "D_0",
+                                  "D_sharp_1",
+                                  "H_2",
+                                  "A_sharp_0",
+                                  "C_1",
+                                  "D_1",
+                                  "A_0",
+                                  "A_sharp_1",
+                                  "C_0",
+                                  "E_0",
+                                  "C_sharp_2",
+                                  "G_sharp_0",
+                                  "G_sharp_2",
+                                  "F_sharp_2",
+                                  "A_sharp_2"
+            // "stick_left",
+            // "stick_right"
+    };
+
+    void detectHit(const std_msgs::String::ConstPtr& msg);
+
+    string keyHit = "null";
 };
 
