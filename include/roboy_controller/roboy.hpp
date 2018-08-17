@@ -170,7 +170,6 @@ private:
     vector<double> getTrajectory(geometry_msgs::Point targetPosition, geometry_msgs::Quaternion targetRotation);
 
     map<string, vector<double>> keyStates;
-    map<string, vector<double>> keyStatesHit;
 
     string keyName = "null";
 
