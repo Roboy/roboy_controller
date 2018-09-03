@@ -12,8 +12,8 @@ planning_group: "lower_arm_left"
 log: 0
 end_effectors: ["lower_arm_left"]
 lower_arm_left:
-  Kp: 100
-  Kd: 10
+  Kp: 3
+  Kd: 0
   target_pos: [0,0,0,0]
   target_vel: [0,0,0,0]
   

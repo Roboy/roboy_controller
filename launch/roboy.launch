@@ -6,6 +6,7 @@
     <arg name="headless" default="true"/>
     <arg name="debug" default="false"/>
     <arg name="xylophone" default="false"/>
+    <arg name="simulate" default="true"/>
 
     <include file="$(find gazebo_ros)/launch/empty_world.launch">
         <arg name="debug" value="$(arg debug)"/>
@@ -27,10 +28,11 @@
         />
     </group>
 
-
-    <node name="sdf_spawner2" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
-          args="-sdf -file $(find roboy_models)/$(arg model_name)/model.sdf -model $(arg model_name)"
-    />
+    <group if="$(arg simulate)">
+        <node name="sdf_spawner2" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
+              args="-sdf -file $(find roboy_models)/$(arg model_name)/model.sdf -model $(arg model_name)"
+        />
+    </group>
 
     <!--&lt;!&ndash;spawn gazebo model with given pose&ndash;&gt;-->
     <!--<include file="$(find timed_roslaunch)/launch/timed_roslaunch.launch">-->

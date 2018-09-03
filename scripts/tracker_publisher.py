@@ -18,15 +18,15 @@ interval = 1/10
 
 initial_pose1 = v.devices["tracker_1"].get_pose_quaternion()
 initial_pose2 = v.devices["tracker_2"].get_pose_quaternion()
-q_init1 = Quaternion(initial_pose1[6],initial_pose1[3],initial_pose1[4],initial_pose1[5])
-q_init2 = Quaternion(initial_pose2[6],initial_pose2[3],initial_pose2[4],initial_pose2[5])
+q_init1 = Quaternion(initial_pose1[6],initial_pose1[3],initial_pose1[4],initial_pose1[5]).normalised
+q_init2 = Quaternion(initial_pose2[6],initial_pose2[3],initial_pose2[4],initial_pose2[5]).normalised
 
 while not rospy.is_shutdown():
     start = time.time()
     txt = ""
     pose = v.devices["tracker_1"].get_pose_quaternion()
 
-    q_current = Quaternion(pose[6],pose[3],pose[4],pose[5])
+    q_current = Quaternion(pose[6],pose[3],pose[4],pose[5]).normalised
 
     q = q_current*q_init1.inverse
 
@@ -40,7 +40,7 @@ while not rospy.is_shutdown():
 
     pose = v.devices["tracker_2"].get_pose_quaternion()
 
-    q_current = Quaternion(pose[6],pose[3],pose[4],pose[5])
+    q_current = Quaternion(pose[6],pose[3],pose[4],pose[5]).normalised
 
     q = q_current*q_init2.inverse
 
