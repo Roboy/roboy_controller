@@ -36,8 +36,10 @@ Roboy::Roboy() {
 
     stringstream str;
     str << "initialized CASPR controllers for endeffectors:" << endl;
-    for(const string &endeffector:endeffectors) {
-        caspr.push_back(boost::shared_ptr<CASPR>(new CASPR(endeffector, muscInfo)));
+    for(auto endeffector:endeffectors) {
+        vector<string> chain;
+        nh->getParam(endeffector+"/kinematic_chain", chain);
+        caspr.push_back(boost::shared_ptr<CASPR>(new CASPR(chain.front(),chain.back(), muscInfo)));
         target_pos[endeffector] = &caspr.back()->target_pos;
         target_vel[endeffector] = &caspr.back()->target_vel;
         str << endeffector << endl;
