@@ -5,6 +5,7 @@
     <arg name="gui" default="false"/>
     <arg name="headless" default="true"/>
     <arg name="debug" default="false"/>
+    <arg name="simulate" default="true"/>
 
     <include file="$(find gazebo_ros)/launch/empty_world.launch">
         <arg name="debug" value="$(arg debug)"/>
@@ -17,21 +18,23 @@
 
     <param name="planning_plugin" type="string" value="ompl_interface/OMPLPlanner"/>
 
-    <node name="sdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
-          args="-sdf -file $(find roboy_models)/xylophone/model.sdf -model xylophone
-                      -x 0.1 -y -0.6 -z 0.15
-                      -R 0.0 -P 0 -Y -3.07"
-    />
-    <node name="sdf_spawner2" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
-          args="-sdf -file $(find roboy_models)/$(arg model_name)/model.sdf -model $(arg model_name)
-          -J hip_joint 0.2877185091848563
-          -J sphere_axis0 0.29086141871888593
-          -J sphere_axis1 0.8282385691186516
-          -J sphere_axis2 -0.757384650187231
-          -J elbow_left 1.209248215971815
-          -J wrist_left 0.8629362373470855
-    "
-    />
+    <group if="$(arg simulate)">
+        <node name="sdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
+              args="-sdf -file $(find roboy_models)/xylophone/model.sdf -model xylophone
+                          -x 0.1 -y -0.6 -z 0.15
+                          -R 0.0 -P 0 -Y -3.07"
+        />
+        <node name="sdf_spawner2" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
+              args="-sdf -file $(find roboy_models)/$(arg model_name)/model.sdf -model $(arg model_name)
+              -J hip_joint 0.2877185091848563
+              -J sphere_axis0 0.29086141871888593
+              -J sphere_axis1 0.8282385691186516
+              -J sphere_axis2 -0.757384650187231
+              -J elbow_left 1.209248215971815
+              -J wrist_left 0.8629362373470855
+        "
+        />
+    </group>
 
     <node pkg="tf" type="static_transform_publisher" name="static_map" args="0 0 0 0 0 0 1  /world /map  100"/>
 
@@ -48,7 +51,6 @@
           respawn="false"
           output="screen"
           args="$(arg model_name)"
-          launch-prefix="gdb -ex run"
     />
 </launch>
         <!--launch-prefix="gdb -ex run"-->

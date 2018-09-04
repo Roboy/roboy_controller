@@ -3,8 +3,8 @@ number_of_motors: 13
 path_planning_pose: 3
 live_tracking: 0
 controller: 1
-max_force: 500
-min_force: 0
+max_force: 10000
+min_force: 10
 qp_print_level: 0
 qp_working_sets: 1000
 planner: "KPIECEkConfigDefault"
@@ -15,7 +15,8 @@ end_effectors:
 lower_arm_left:
   Kp: 200
   Kd: 30
-  target_pos: [0.2877185091848563, 0.29086141871888593, 0.8282385691186516, -0.757384650187231, 1.209248215971815, 0.8629362373470855]
+#  target_pos: [0.2877185091848563, 0.29086141871888593, 0.8282385691186516, -0.757384650187231, 1.209248215971815, 0.8629362373470855]
+  target_pos: [0,0,0,0,0,0]
   target_vel: [0,0,0,0,0,0]
   kinematic_chain: ["base","lower_arm_left"]
   

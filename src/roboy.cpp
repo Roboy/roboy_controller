@@ -137,7 +137,7 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
     // Control loop
     ros::Time prev_time = ros::Time::now();
 
-    currentState = Precompute;
+    currentState = IDLE;
 
     for (auto casp : caspr) {
         nh->getParam(casp->end_effektor_name + "/target_pos", casp->target_pos);
@@ -313,11 +313,14 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
                 break;
             }
             case IDLE: {
+                ROS_WARN_THROTTLE(1,"IDLE");
                 const ros::Time time = ros::Time::now();
                 const ros::Duration period = time - prev_time;
 
                 read();
                 write();
+                for(auto casp:caspr)
+                    casp->forwardKinematics(period.toSec());
 
                 prev_time = time;
                 break;
