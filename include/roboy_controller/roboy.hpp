@@ -63,7 +63,7 @@ public:
     /**
 	 * Read from hardware
 	 */
-    void read();
+    void read(double period);
 
     /**
      * Write to Hardware

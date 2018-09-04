@@ -6,6 +6,7 @@
     <arg name="headless" default="true"/>
     <arg name="debug" default="false"/>
     <arg name="simulate" default="true"/>
+    <arg name="xylophone" default="true"/>
 
     <include file="$(find gazebo_ros)/launch/empty_world.launch">
         <arg name="debug" value="$(arg debug)"/>
@@ -18,12 +19,15 @@
 
     <param name="planning_plugin" type="string" value="ompl_interface/OMPLPlanner"/>
 
-    <group if="$(arg simulate)">
+    <group if="$(arg xylophone)">
         <node name="sdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
               args="-sdf -file $(find roboy_models)/xylophone/model.sdf -model xylophone
-                          -x 0.1 -y -0.6 -z 0.15
-                          -R 0.0 -P 0 -Y -3.07"
+                              -x 0.1 -y -0.6 -z 0.15
+                              -R 0.0 -P 0 -Y -3.07"
         />
+    </group>
+
+    <group if="$(arg simulate)">
         <node name="sdf_spawner2" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
               args="-sdf -file $(find roboy_models)/$(arg model_name)/model.sdf -model $(arg model_name)
               -J hip_joint 0.2877185091848563
