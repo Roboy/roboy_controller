@@ -138,7 +138,7 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
     // Control loop
     ros::Time prev_time = ros::Time::now();
 
-    currentState = trackCup;
+    currentState = IDLE;
 
     ros::NodeHandle n;
     ros::Subscriber sub = n.subscribe("xylophone/hitdetection", 1, &Roboy::detectHit, this);
