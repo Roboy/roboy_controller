@@ -138,12 +138,7 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
     // Control loop
     ros::Time prev_time = ros::Time::now();
 
-    currentState = Precompute;
-
-    for (auto casp : caspr) {
-        nh->getParam(casp->end_effektor_name + "/target_pos", casp->target_pos);
-        nh->getParam(casp->end_effektor_name + "/target_vel", casp->target_vel);
-    }
+    currentState = IDLE;
 
     ros::NodeHandle n;
     ros::Subscriber sub = n.subscribe("xylophone/hitdetection", 1, &Roboy::detectHit, this);
