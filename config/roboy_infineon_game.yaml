@@ -2,7 +2,7 @@ number_of_fpgas: 5
 number_of_motors: 13
 path_planning_pose: 3
 live_tracking: 0
-controller: 1
+controller: 2
 max_force: 10000
 min_force: 10
 qp_print_level: 0
@@ -14,6 +14,7 @@ lower_arm_left:
   Kp: 1
   Kd: 0
 #  target_pos: [0.2877185091848563, 0.29086141871888593, 0.8282385691186516, -0.757384650187231, 1.209248215971815, 0.8629362373470855]
-  target_pos: [0,0,0,0,0,0]
+#  target_pos: [0,0,0,0,0,0]
+  target_pos: [0,-1,0,0,0.6,1.57]
   target_vel: [0,0,0,0,0,0]
   kinematic_chain: ["base","lower_arm_left"]

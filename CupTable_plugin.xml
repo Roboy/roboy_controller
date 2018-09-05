@@ -1,0 +1,7 @@
+<library path="lib/libCupTablePlugin">
+    <class name="roboy_controller/CupTablePlugin" type="CupTablePlugin"
+           base_class_type="gazebo::ModelPlugin">
+        <description>This is the cup table plugin.</description>
+    </class>
+</library>
+

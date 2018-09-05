@@ -138,7 +138,7 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
     // Control loop
     ros::Time prev_time = ros::Time::now();
 
-    currentState = IDLE;
+    currentState = trackCup;
 
     ros::NodeHandle n;
     ros::Subscriber sub = n.subscribe("xylophone/hitdetection", 1, &Roboy::detectHit, this);
@@ -284,6 +284,58 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
                     currentState = NextState(currentState);
                 }
                 write();
+                break;
+            }
+            case trackCup: {
+                ROS_WARN_THROTTLE(1, "tracking Cup");
+
+                read(period.toSec());
+                write();
+
+                int cup = 0;
+                nh->getParam("/cup", cup);
+
+                tf::StampedTransform trans;
+                char str[10];
+                sprintf(str, "cup_%d", cup);
+                try {
+                    listener.lookupTransform("world", str, ros::Time(0), trans);
+                }
+                catch (tf::LookupException ex) {
+                    ROS_WARN_THROTTLE(1, "%s", ex.what());
+                }
+
+                // only get new IK solution if the target position has changed
+                static geometry_msgs::Point targetPosition;
+                static bool ik_success = false;
+                if(trans.getOrigin().getX()==targetPosition.x && trans.getOrigin().getY()==targetPosition.y && trans.getOrigin().getZ()==targetPosition.z && ik_success)
+                    break;
+
+                roboy_communication_middleware::InverseKinematics srv;
+                srv.request.pose.position.x = trans.getOrigin().getX();
+                srv.request.pose.position.y = trans.getOrigin().getY();
+                srv.request.pose.position.z = trans.getOrigin().getZ();
+                tf::Quaternion targetRotation = trans.getRotation();
+                srv.request.pose.orientation.x = targetRotation.x();
+                srv.request.pose.orientation.y = targetRotation.y();
+                srv.request.pose.orientation.z = targetRotation.z();
+                srv.request.pose.orientation.w = targetRotation.w();
+
+                if (caspr.back()->InverseKinematicsService(srv.request, srv.response)) {
+                    nh->setParam(caspr.back()->end_effektor_name + "/target_pos", srv.response.angles);
+                    ik_success = true;
+                    currentState = GoToPosition;
+                }else{
+                    ik_success = false;
+                }
+
+                break;
+            }
+            case GoToPosition:{
+                read(period.toSec());
+                write();
+                if((caspr.back()->q-caspr.back()->q_target).norm()<0.01)
+                    currentState = trackCup;
                 break;
             }
             case IDLE: {

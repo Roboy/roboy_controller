@@ -22,5 +22,6 @@
         <controller_interface plugin="${prefix}/JointAngleController_plugin.xml"/>
         <controller_interface plugin="${prefix}/MuscController_plugin.xml"/>
         <controller_interface plugin="${prefix}/HitDetection_plugin.xml"/>
+        <controller_interface plugin="${prefix}/CupTable_plugin.xml"/>
     </export>
 </package>

@@ -45,6 +45,8 @@ typedef enum {
     WaitForInput,
     MoveToKey,
     HitKey,
+    trackCup,
+    GoToPosition,
     IDLE
 } ActionState;
 
@@ -172,6 +174,8 @@ private:
     map<string, vector<double>> keyStates;
 
     string keyName = "null";
+
+    tf::TransformListener listener;
 
     void grabStick();
     map<string, geometry_msgs::Point> getCoordinates();

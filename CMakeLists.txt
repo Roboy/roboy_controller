@@ -72,6 +72,10 @@ target_link_libraries(roboy ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})
 add_library(HitDetection  src/HitDetectionPlugin.cpp)
 add_dependencies(roboy roboy_communication_middleware_generate_messages_cpp )
 target_link_libraries(HitDetection ${GAZEBO_libraries}  ${roscpp_LIBRARIES} ${catkin_LIBRARIES})
+
+add_library(CupTablePlugin  src/CupTablePlugin.cpp)
+add_dependencies(CupTablePlugin roboy_communication_middleware_generate_messages_cpp )
+target_link_libraries(CupTablePlugin ${GAZEBO_libraries}  ${roscpp_LIBRARIES} ${catkin_LIBRARIES})
 #==============================================================================
 # Installation
 #==============================================================================

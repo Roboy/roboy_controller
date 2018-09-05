@@ -59,20 +59,7 @@ public:
         hit_detection_pub = rosNode->advertise<std_msgs::String>("xylophone/hitdetection", 1);
         boost::shared_ptr<ros::AsyncSpinner> spinner = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(1));
         spinner->start();
-        //ros::Rate loop_rate(10);
 
-
-        /*ros::SubscribeOptions so =
-        ros::SubscribeOptions::create<std_msgs::Float32>(
-            "/" + this->model->GetName() + "/HitDetection",
-            1,
-            boost::bind(&HitDetectionPlugin::OnRosMsg, this, _1),
-            ros::VoidPtr(), &this->rosQueue);
-        this->rosSub = this->rosNode->subscribe(so);
-        this->rosQueueThread =
-        std::thread(std::bind(&HitDetectionPlugin::QueueThread, this));*/
-
-        //std::cerr << "Get Joints";
         physics::Joint_V joints = model->GetJoints();
         for (auto joint : joints) {
             prevVelocity[joint->GetName()] = 0.0;
@@ -94,7 +81,7 @@ public:
         tf::Transform transform;
 
         //update xylophonepose based on darttracker
-        setXylophonePose();
+//        setXylophonePose();
 
         std::string model_name = model->GetName();
         physics::Link_V links = model->GetLinks();
