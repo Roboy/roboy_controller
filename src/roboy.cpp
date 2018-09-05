@@ -311,20 +311,33 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
                 if(trans.getOrigin().getX()==targetPosition.x && trans.getOrigin().getY()==targetPosition.y && trans.getOrigin().getZ()==targetPosition.z && ik_success)
                     break;
 
+                // with offset so we are above cup
+                vector<float> cup_offset;
+                nh->getParam("cup_offset", cup_offset);
                 roboy_communication_middleware::InverseKinematics srv;
-                srv.request.pose.position.x = trans.getOrigin().getX();
-                srv.request.pose.position.y = trans.getOrigin().getY();
-                srv.request.pose.position.z = trans.getOrigin().getZ();
+                srv.request.pose.position.x = trans.getOrigin().getX() + cup_offset[0];
+                srv.request.pose.position.y = trans.getOrigin().getY() + cup_offset[1];
+                srv.request.pose.position.z = trans.getOrigin().getZ() + cup_offset[2];
                 tf::Quaternion targetRotation = trans.getRotation();
-                srv.request.pose.orientation.x = targetRotation.x();
-                srv.request.pose.orientation.y = targetRotation.y();
-                srv.request.pose.orientation.z = targetRotation.z();
-                srv.request.pose.orientation.w = targetRotation.w();
+                srv.request.pose.orientation.x = 0.4864;
+                srv.request.pose.orientation.y = 0.54329;
+                srv.request.pose.orientation.z = 0.47472;
+                srv.request.pose.orientation.w = -0.49285;
+
+                ROS_INFO_THROTTLE(1,"target pos %.3lf %.3lf %.3lf , ori %.3lf %.3lf %.3lf %.3lf",
+                                  srv.request.pose.position.x,
+                                  srv.request.pose.position.y,
+                                  srv.request.pose.position.z,
+                                  srv.request.pose.orientation.x,
+                                  srv.request.pose.orientation.y,
+                                  srv.request.pose.orientation.z,
+                                  srv.request.pose.orientation.w);
 
                 if (caspr.back()->InverseKinematicsService(srv.request, srv.response)) {
                     nh->setParam(caspr.back()->end_effektor_name + "/target_pos", srv.response.angles);
                     ik_success = true;
                     currentState = GoToPosition;
+                    goto_start = ros::Time::now();
                 }else{
                     ik_success = false;
                 }
@@ -334,8 +347,10 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
             case GoToPosition:{
                 read(period.toSec());
                 write();
-                if((caspr.back()->q-caspr.back()->q_target).norm()<0.01)
+                double norm =(caspr.back()->q-caspr.back()->q_target).norm();
+                if(norm<0.01 || (ros::Time::now()-goto_start).toSec()>goto_timeout_sec)
                     currentState = trackCup;
+                ROS_WARN_THROTTLE(1,"Trying to reach targetPosition, error = %lf", norm);
                 break;
             }
             case IDLE: {

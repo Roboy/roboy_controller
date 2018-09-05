@@ -165,6 +165,9 @@ private:
 
     };
 
+    ros::Time goto_start;
+    double goto_timeout_sec = 3;
+
     void closeHand();
 
     void precomputeTrajectories();
