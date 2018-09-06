@@ -9,7 +9,16 @@ SET(CMAKE_BUILD_TYPE Debug)
 # Dependencies
 #==============================================================================
 find_package(catkin REQUIRED COMPONENTS roscpp controller_interface hardware_interface pluginlib
-        roboy_communication_middleware ecl_geometry common_utilities controller_manager roboy_simulation)
+        roboy_communication_middleware
+		ecl_geometry
+		aruco_detect
+		sensor_msgs
+		cv_bridge
+		std_msgs
+		image_transport
+		common_utilities
+		controller_manager
+		roboy_simulation)
 catkin_package(CATKIN_DEPENDS message_runtime roboy_communication_middleware common_utilities roboy_simulation INCLUDE_DIRS include)
 
 # roboticslibrary
