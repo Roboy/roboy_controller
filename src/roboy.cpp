@@ -31,28 +31,31 @@ Roboy::Roboy() {
     nh->getParam("end_effectors", endeffectors);
 
     vector<MuscInfo> muscInfo;
-    if(!CASPR::parseSDFusion(sdf,muscInfo))
+    if (!CASPR::parseSDFusion(sdf, muscInfo))
         ROS_FATAL("error parsing sdf");
 
     stringstream str;
     str << "initialized CASPR controllers for endeffectors:" << endl;
-    for(auto endeffector:endeffectors) {
+    for (auto endeffector:endeffectors) {
         vector<string> chain;
-        nh->getParam(endeffector+"/kinematic_chain", chain);
-        caspr.push_back(boost::shared_ptr<CASPR>(new CASPR(chain.front(),chain.back(), muscInfo)));
+        nh->getParam(endeffector + "/kinematic_chain", chain);
+        caspr.push_back(boost::shared_ptr<CASPR>(new CASPR(chain.front(), chain.back(), muscInfo)));
         caspr.back()->simulate = true;
         target_pos[endeffector] = &caspr.back()->target_pos;
         target_vel[endeffector] = &caspr.back()->target_vel;
+        targetPosition[endeffector].setZero();
+        ik_success[endeffector] = false;
+        reached_target[endeffector] = false;
         str << endeffector << endl;
     }
     ROS_INFO_STREAM(str.str());
 }
 
 Roboy::~Roboy() {
-    delete []cmd;
-    delete []pos;
-    delete []vel;
-    delete []eff;
+    delete[]cmd;
+    delete[]pos;
+    delete[]vel;
+    delete[]eff;
 }
 
 void Roboy::MotorStatus(const roboy_communication_middleware::MotorStatus::ConstPtr &msg) {
@@ -83,7 +86,8 @@ bool Roboy::initializeControllers(roboy_communication_middleware::Initialize::Re
         act_state_interface.registerHandle(state_handle);
 
         // connect and register the actuator interface
-        hardware_interface::ActuatorHandle actuator_handle(act_state_interface.getHandle(resource), &cmd[req.idList[i]]);
+        hardware_interface::ActuatorHandle actuator_handle(act_state_interface.getHandle(resource),
+                                                           &cmd[req.idList[i]]);
         act_command_interface.registerHandle(actuator_handle);
     }
 
@@ -116,19 +120,19 @@ bool Roboy::initializeControllers(roboy_communication_middleware::Initialize::Re
 
 void Roboy::read(double period) {
     ROS_DEBUG("read");
-    for(auto casp:caspr){
+    for (auto casp:caspr) {
         casp->update(period);
     }
 }
 
 void Roboy::write() {
     ROS_DEBUG("write");
-    for(auto casp:caspr){
+    for (auto casp:caspr) {
         nh->getParam(casp->end_effektor_name + "/Kp", Kp[casp->end_effektor_name]);
         nh->getParam(casp->end_effektor_name + "/Kd", Kd[casp->end_effektor_name]);
         nh->getParam(casp->end_effektor_name + "/target_pos", casp->target_pos);
         nh->getParam(casp->end_effektor_name + "/target_vel", casp->target_vel);
-        casp->updateController(Kp[casp->end_effektor_name],Kd[casp->end_effektor_name]);
+        casp->updateController(Kp[casp->end_effektor_name], Kd[casp->end_effektor_name]);
     }
 }
 
@@ -138,7 +142,7 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
     // Control loop
     ros::Time prev_time = ros::Time::now();
 
-    currentState = IDLE;
+    currentState = trackCup;
 
     ros::NodeHandle n;
     ros::Subscriber sub = n.subscribe("xylophone/hitdetection", 1, &Roboy::detectHit, this);
@@ -153,7 +157,7 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
         string status = "";
         nh->getParam("/roboy_phase", status);
 
-        if (status == "abort"){
+        if (status == "abort") {
             currentState = WaitForInput;
             nh->setParam("/key", "null");
             nh->setParam("/roboy_phase", "null");
@@ -170,20 +174,21 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
 
                 precomputeTrajectories();
 
-                for (auto const& k : keyNames) {
+                for (auto const &k : keyNames) {
 
                     cout << "Set Target for key " << k << endl << "[ ";
 
                     for (int i = 0; i < 7; i++) {
                         cout << keyStates[k][i];
-                        if(i>6){
+                        if (i > 6) {
                             cout << ",";
                         }
                     }
-                    cout<< " ]" << endl;
+                    cout << " ]" << endl;
                 }
 
-                vector<double> v = {0.2877185091848563, 0.29086141871888593, 0.8282385691186516, -0.757384650187231, 1.209248215971815, 0.8629362373470855};
+                vector<double> v = {0.2877185091848563, 0.29086141871888593, 0.8282385691186516, -0.757384650187231,
+                                    1.209248215971815, 0.8629362373470855};
                 nh->setParam("/hand_left/target_pos", v);
                 nh->setParam("/controller", 1);
                 currentState = NextState(currentState);
@@ -221,21 +226,20 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
 
                 if (keyStates.find(keyName) == keyStates.end()) {
                     break;
-                }
-                else {
+                } else {
                     currentState = NextState(currentState);;
                 }
                 write();
                 break;
             }
             case MoveToKey: {
-                ROS_WARN_THROTTLE(2,"Moving to Key");
+                ROS_WARN_THROTTLE(2, "Moving to Key");
                 read(period.toSec());
 
                 nh->setParam("/hand_left/target_pos", keyStates[keyName]);
 
 
-                if (status == "done"){
+                if (status == "done") {
                     ROS_INFO("Reached target position");
                     nh->setParam("/key", "null");
                     nh->setParam("/roboy_phase", "null");
@@ -273,7 +277,7 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
                 break;
             }
             case HitKey: {
-                ROS_WARN_THROTTLE(2,"Trying to hit Key");
+                ROS_WARN_THROTTLE(2, "Trying to hit Key");
                 read(0.001);
 
                 cout << keyHit << endl;
@@ -292,69 +296,87 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager) 
                 read(period.toSec());
                 write();
 
-                int cup = 0;
+                string cup;
                 nh->getParam("/cup", cup);
+                nh->getParam("/active_endeffector", active_endeffector);
 
                 tf::StampedTransform trans;
-                char str[10];
-                sprintf(str, "cup_%d", cup);
                 try {
-                    listener.lookupTransform("world", str, ros::Time(0), trans);
+                    listener.lookupTransform("world", cup.c_str(), ros::Time(0), trans);
                 }
                 catch (tf::LookupException ex) {
                     ROS_WARN_THROTTLE(1, "%s", ex.what());
-                }
-
-                // only get new IK solution if the target position has changed
-                static geometry_msgs::Point targetPosition;
-                static bool ik_success = false;
-                if(trans.getOrigin().getX()==targetPosition.x && trans.getOrigin().getY()==targetPosition.y && trans.getOrigin().getZ()==targetPosition.z && ik_success)
                     break;
-
-                // with offset so we are above cup
-                vector<float> cup_offset;
-                nh->getParam("cup_offset", cup_offset);
-                roboy_communication_middleware::InverseKinematics srv;
-                srv.request.pose.position.x = trans.getOrigin().getX() + cup_offset[0];
-                srv.request.pose.position.y = trans.getOrigin().getY() + cup_offset[1];
-                srv.request.pose.position.z = trans.getOrigin().getZ() + cup_offset[2];
-                tf::Quaternion targetRotation = trans.getRotation();
-                srv.request.pose.orientation.x = 0.4864;
-                srv.request.pose.orientation.y = 0.54329;
-                srv.request.pose.orientation.z = 0.47472;
-                srv.request.pose.orientation.w = -0.49285;
-
-                ROS_INFO_THROTTLE(1,"target pos %.3lf %.3lf %.3lf , ori %.3lf %.3lf %.3lf %.3lf",
-                                  srv.request.pose.position.x,
-                                  srv.request.pose.position.y,
-                                  srv.request.pose.position.z,
-                                  srv.request.pose.orientation.x,
-                                  srv.request.pose.orientation.y,
-                                  srv.request.pose.orientation.z,
-                                  srv.request.pose.orientation.w);
-
-                if (caspr.back()->InverseKinematicsService(srv.request, srv.response)) {
-                    nh->setParam(caspr.back()->end_effektor_name + "/target_pos", srv.response.angles);
-                    ik_success = true;
-                    currentState = GoToPosition;
-                    goto_start = ros::Time::now();
-                }else{
-                    ik_success = false;
                 }
 
+                for (auto casp:caspr) {
+                    if(casp->end_effektor_name!=active_endeffector) {
+                        continue;
+                    }
+                    targetPosition[casp->end_effektor_name][0] = trans.getOrigin().x();
+                    targetPosition[casp->end_effektor_name][1] = trans.getOrigin().y();
+                    targetPosition[casp->end_effektor_name][2] = trans.getOrigin().z();
+                    // only get new IK solution if the target position has changed
+                    if (sqrt(pow(targetPosition[casp->end_effektor_name][0]-trans.getOrigin().x(),2.0)+
+                             pow(targetPosition[casp->end_effektor_name][1]-trans.getOrigin().y(),2.0)+
+                             pow(targetPosition[casp->end_effektor_name][2]-trans.getOrigin().z(),2.0))<0.01 &&
+                        ik_success[casp->end_effektor_name] && reached_target[casp->end_effektor_name])
+                        continue;
+
+                    // with offset so we are above cup
+                    vector<float> cup_offset;
+                    nh->getParam("cup_offset", cup_offset);
+                    roboy_communication_middleware::InverseKinematics srv;
+                    srv.request.pose.position.x = trans.getOrigin().getX() + cup_offset[0];
+                    srv.request.pose.position.y = trans.getOrigin().getY() + cup_offset[1];
+                    srv.request.pose.position.z = trans.getOrigin().getZ() + cup_offset[2];
+                    tf::Quaternion targetRotation = trans.getRotation();
+                    srv.request.pose.orientation.x = 0.4864;
+                    srv.request.pose.orientation.y = 0.54329;
+                    srv.request.pose.orientation.z = 0.47472;
+                    srv.request.pose.orientation.w = -0.49285;
+
+                    ROS_INFO_THROTTLE(1, "target pos %.3lf %.3lf %.3lf , ori %.3lf %.3lf %.3lf %.3lf",
+                                      srv.request.pose.position.x,
+                                      srv.request.pose.position.y,
+                                      srv.request.pose.position.z,
+                                      srv.request.pose.orientation.x,
+                                      srv.request.pose.orientation.y,
+                                      srv.request.pose.orientation.z,
+                                      srv.request.pose.orientation.w);
+
+                    if (casp->InverseKinematicsService(srv.request, srv.response)) {
+                        nh->setParam(casp->end_effektor_name + "/target_pos", srv.response.angles);
+                        ik_success[casp->end_effektor_name] = true;
+                        goto_start = ros::Time::now();
+                    } else {
+                        ik_success[casp->end_effektor_name] = false;
+                    }
+                }
+                currentState = GoToPosition;
                 break;
             }
-            case GoToPosition:{
+            case GoToPosition: {
                 read(period.toSec());
                 write();
-                double norm =(caspr.back()->q-caspr.back()->q_target).norm();
-                if(norm<0.01 || (ros::Time::now()-goto_start).toSec()>goto_timeout_sec)
+                bool all_endeffectors_reached_target = true;
+                for(auto casp:caspr) {
+                    double norm = (casp->q - casp->q_target).norm();
+                    if (norm < 0.03 || (ros::Time::now() - goto_start).toSec() > goto_timeout_sec){
+                        reached_target[casp->end_effektor_name] = true;
+                    }else{
+                        reached_target[casp->end_effektor_name] = false;
+                        all_endeffectors_reached_target = false;
+                    }
+                    ROS_WARN_THROTTLE(1, "%s trying to reach targetPosition, error = %lf", casp->end_effektor_name.c_str(), norm);
+                }
+                if(all_endeffectors_reached_target)
                     currentState = trackCup;
-                ROS_WARN_THROTTLE(1,"Trying to reach targetPosition, error = %lf", norm);
+
                 break;
             }
             case IDLE: {
-                ROS_WARN_THROTTLE(1,"IDLE");
+                ROS_WARN_THROTTLE(1, "IDLE");
                 read(period.toSec());
                 write();
                 break;
@@ -421,14 +443,14 @@ ActionState Roboy::NextState(ActionState s) {
 //@TODO
 void Roboy::closeHand() {
     return;
-    vector<string> fingers = {    "left_little_limb3",
-                                  "left_ring_limb3",
-                                  "left_middle_limb3",
-                                  "left_index_limb3",
-                                  "left_thumb_limb3"
+    vector<string> fingers = {"left_little_limb3",
+                              "left_ring_limb3",
+                              "left_middle_limb3",
+                              "left_index_limb3",
+                              "left_thumb_limb3"
     };
     for (auto casp : caspr) {
-        for (auto const& f : fingers) {
+        for (auto const &f : fingers) {
             if (casp->end_effektor_name == f)
                 casp->target_vel = {1.0, 1.0, 1.0, 1.0};
         }
@@ -451,8 +473,7 @@ void Roboy::precomputeTrajectories() {
     targetRotation.z = -0.7071068;
     targetRotation.w = 0.7071068;
 
-    for (auto const& p : positions)
-    {
+    for (auto const &p : positions) {
         geometry_msgs::Point offsetPosition;
         offsetPosition.x = p.second.x + offset.x;
         offsetPosition.y = p.second.y + offset.y;
@@ -461,8 +482,7 @@ void Roboy::precomputeTrajectories() {
         vector<double> jointAngles;
         if (p.first == "stick_left" || p.first == "stick_right") {
             //jointAngles = getTrajectory(p.second, targetRotation);
-        }
-        else {
+        } else {
             jointAngles = getTrajectory(offsetPosition, targetRotation);
         }
 
@@ -472,8 +492,7 @@ void Roboy::precomputeTrajectories() {
 
 
 /// gets coords for xylophone and its keys, is only called once
-map<string, geometry_msgs::Point> Roboy::getCoordinates()
-{
+map<string, geometry_msgs::Point> Roboy::getCoordinates() {
     tf::TransformListener listener;
     //blocking fct: waits for something / anything to get published on tf topic to work on reliable data later on
     //for now, random frames from roboy's model chosen
@@ -481,7 +500,7 @@ map<string, geometry_msgs::Point> Roboy::getCoordinates()
 
     map<string, geometry_msgs::Point> positions;
 
-    for (auto const& k : keyNames) {
+    for (auto const &k : keyNames) {
 
         cout << "Getting Transform for key " << k << endl;
 
@@ -512,23 +531,20 @@ vector<double> Roboy::getTrajectory(geometry_msgs::Point targetPosition, geometr
     srv.request.pose.position = targetPosition;
     srv.request.pose.orientation = targetRotation;
 
-    if (caspr.back()->InverseKinematicsService(srv.request,srv.response))
-    {
+    if (caspr.back()->InverseKinematicsService(srv.request, srv.response)) {
         return srv.response.angles;
-    }
-    else
-    {
+    } else {
         vector<double> zeros = {0, 0, 0, 0, 0, 0, 0};
         return zeros;
     }
 }
 
-void Roboy::detectHit(const std_msgs::String::ConstPtr & msg) {
+void Roboy::detectHit(const std_msgs::String::ConstPtr &msg) {
     keyHit = msg->data.c_str();
 }
 
 
-void update(controller_manager::ControllerManager * cm) {
+void update(controller_manager::ControllerManager *cm) {
     ros::Time prev_time = ros::Time::now();
     ros::Rate rate(10);
     while (ros::ok()) {

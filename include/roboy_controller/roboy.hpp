@@ -165,8 +165,12 @@ private:
 
     };
 
+    map<string,Vector3d> targetPosition;
+    map<string,bool> ik_success, reached_target;
+    string active_endeffector;
+
     ros::Time goto_start;
-    double goto_timeout_sec = 3;
+    double goto_timeout_sec = 5;
 
     void closeHand();
 

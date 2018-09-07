@@ -8,15 +8,34 @@ min_force: 10
 qp_print_level: 0
 qp_working_sets: 1000
 log: 0
-cup: 1
+active_endeffector: "wrist_left_1"
+cup: "cup_zed_left_2"
 cup_offset: [0,0.05,0.1]
 end_effectors:
-  ["head"]
+  ["head","wrist_left_1"]
 head:
   Kp: 1
   Kd: 0
-  target_pos: [0,0,0,0,0,0,0,0]
-#  target_pos: [0,-1,0,0,0.6,1.57,0,0]
-  target_vel: [0,0,0,0,0,0,0,0]
+  target_pos: [0,0,0,0]
+  target_vel: [0,0,0,0]
   kinematic_chain: ["base","head"]
-  fpga_id: 3
+  joint_angle_mask: 0x1
+  fpga_id: 0
+
+wrist_left_1:
+  Kp: 1
+  Kd: 0
+  target_pos: [0,0,0,0,0,0]
+  target_vel: [0,0,0,0,0,0]
+  kinematic_chain: ["base","wrist_left_1"]
+  joint_angle_mask: 0
+  fpga_id: 0
+
+wrist_right_1:
+  Kp: 1
+  Kd: 0
+  target_pos: [0,0,0,0,0,0]
+  target_vel: [0,0,0,0,0,0]
+  kinematic_chain: ["base","wrist_right_1"]
+  joint_angle_mask: 0x1
+  fpga_id: 0
