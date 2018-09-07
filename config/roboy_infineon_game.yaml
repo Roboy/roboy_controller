@@ -11,12 +11,12 @@ log: 0
 cup: 1
 cup_offset: [0,0.05,0.1]
 end_effectors:
-  ["upper_arm_left"]
-upper_arm_left:
+  ["head"]
+head:
   Kp: 1
   Kd: 0
   target_pos: [0,0,0,0,0,0,0,0]
 #  target_pos: [0,-1,0,0,0.6,1.57,0,0]
   target_vel: [0,0,0,0,0,0,0,0]
-  kinematic_chain: ["base","upper_arm_left"]
+  kinematic_chain: ["base","head"]
   fpga_id: 3

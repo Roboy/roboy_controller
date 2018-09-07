@@ -31,8 +31,8 @@
     <group if="$(arg cup_table)">
         <node name="sdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
               args="-sdf -file $(find roboy_models)/cup_table/model.sdf -model cup_table
-                              -x 0.28 -y -0.36 -z 0.3
-                              -R 0 -P 0 -Y 3.14"
+                              -x 0.0 -y -0.5 -z 0.3
+                              -R 0 -P 0 -Y 0"
         />
     </group>
 
