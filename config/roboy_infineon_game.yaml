@@ -16,26 +16,38 @@ end_effectors:
 head:
   Kp: 1
   Kd: 0
+  target_frame: "head"
+  target_offset: [0,0,0]
+  target_rotation: [0,0,0,1]
   target_pos: [0,0,0,0]
   target_vel: [0,0,0,0]
   kinematic_chain: ["base","head"]
   joint_angle_mask: 0x1
+  control: 0
   fpga_id: 0
 
 wrist_left_1:
   Kp: 1
   Kd: 0
+  target_frame: "wrist_left_1"
+  target_offset: [0,0,0]
+  target_rotation: [0.4864,0.54329,0.47472,-0.49285]
   target_pos: [0,0,0,0,0,0]
   target_vel: [0,0,0,0,0,0]
   kinematic_chain: ["base","wrist_left_1"]
   joint_angle_mask: 0
+  control: 1
   fpga_id: 0
 
 wrist_right_1:
   Kp: 1
   Kd: 0
+  target_frame: "wrist_right_1"
+  target_offset: [0,0,0]
+  target_rotation: [0,0,0,1]
   target_pos: [0,0,0,0,0,0]
   target_vel: [0,0,0,0,0,0]
   kinematic_chain: ["base","wrist_right_1"]
   joint_angle_mask: 0x1
+  control: 1
   fpga_id: 0
