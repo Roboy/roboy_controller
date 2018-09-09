@@ -74,6 +74,7 @@
           respawn="false"
           output="screen"
           args="$(arg model_name)"
+
     />
 </launch>
         <!--launch-prefix="gdb -ex run"-->

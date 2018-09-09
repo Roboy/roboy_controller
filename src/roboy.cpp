@@ -188,7 +188,7 @@ void Roboy::main_loop() {
                     if ((allTargetsReached && new_target[casp->end_effektor_name]
                         && control[casp->end_effektor_name] == 1) || !ik_success[casp->end_effektor_name]) {
                         roboy_communication_middleware::InverseKinematics srv;
-                        srv.request.use_current_robot_pose = ik_success[casp->end_effektor_name];
+//                        srv.request.use_current_robot_pose = ik_success[casp->end_effektor_name];
                         srv.request.pose.position.x = targetPosition[casp->end_effektor_name][0];
                         srv.request.pose.position.y = targetPosition[casp->end_effektor_name][1];
                         srv.request.pose.position.z = targetPosition[casp->end_effektor_name][2];
