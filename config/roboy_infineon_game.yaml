@@ -9,14 +9,12 @@ qp_print_level: 0
 qp_working_sets: 1000
 log: 0
 active_endeffector: "wrist_left_1"
-cup: "cup_zed_left_2"
-cup_offset: [0,0.05,0.1]
 end_effectors:
   ["head","wrist_left_1"]
 head:
   Kp: 1
   Kd: 0
-  target_frame: "head"
+  target_frame: "cup_aruco_2"
   target_offset: [0,0,0]
   target_rotation: [0,0,0,1]
   target_pos: [0,0,0,0]
@@ -29,13 +27,13 @@ head:
 wrist_left_1:
   Kp: 1
   Kd: 0
-  target_frame: "wrist_left_1"
-  target_offset: [0,0,0]
+  target_frame: "cup_aruco_2"
+  target_offset: [0,0.05,0.1]
   target_rotation: [0.4864,0.54329,0.47472,-0.49285]
   target_pos: [0,0,0,0,0,0]
   target_vel: [0,0,0,0,0,0]
   kinematic_chain: ["base","wrist_left_1"]
-  joint_angle_mask: 0
+  joint_angle_mask: 0x40
   control: 1
   fpga_id: 0
 

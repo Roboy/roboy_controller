@@ -1,8 +1,10 @@
 #pragma once
 
 #include <ros/ros.h>
+#include <std_srvs/Empty.h>
 #include <roboy_simulation/CASPR.hpp>
 #include <common_utilities/CommonDefinitions.h>
+#include <common_utilities/rviz_visualization.hpp>
 #include "roboy_communication_middleware/Initialize.h"
 #include "roboy_communication_middleware/EmergencyStop.h"
 #include "roboy_communication_middleware/Record.h"
@@ -22,13 +24,15 @@ using namespace Eigen;
 //! enum for state machine
 typedef enum {
     Idle,
+    LookAtTarget,
+    CheckIfHeadTargetReached,
     CheckTargetFrames,
     GetTargetPositionsAndRotations,
     InverseKinematicsToTarget,
     CheckIfTargetReached
 } ActionState;
 
-class Roboy{
+class Roboy:private rviz_visualization{
 public:
     /**
      * Constructor
@@ -55,15 +59,25 @@ public:
      */
     void main_loop();
 private:
+    bool lookAt(string frame, string target_frame);
+
+    bool ResetService(std_srvs::Empty::Request &req,
+                      std_srvs::Empty::Response &res);
+
     ros::NodeHandlePtr nh;
+    ros::ServiceServer reset_srv;
     ros::Time prev_time;
     boost::shared_ptr<ros::AsyncSpinner> spinner;
 
     map<string,double> Kp, Kd;
     map<string,vector<double>*> target_pos, target_vel;
+    Eigen::IOFormat fmt;
+    ros::Time info_time_prev;
+    int info_counter = 0;
     vector<CASPRptr> caspr;
     map<string,Vector3d> targetPosition, target_offset;
     map<string,Quaterniond> targetRotation;
+    bool allTargetsReached = true;
     map<string,bool> ik_success, reached_target, new_target;
     map<string,string> target_frame;
     map<string,ros::Time> goto_start;
@@ -71,18 +85,13 @@ private:
     double goto_timeout_sec = 5;
 
     //! current state of roboy
-    ActionState currentState = CheckTargetFrames;
-
-    /**
-     * Statemachine function for next state
-     * @param s current State
-     * @return next state
-     */
-    ActionState NextState(ActionState s);
+    ActionState currentState, nextState = CheckTargetFrames;
 
     //! state strings describing each state
     std::map<ActionState, std::string> state_strings = {
             {CheckTargetFrames, "CheckTargetFrames"},
+            {LookAtTarget, "LookAtTarget"},
+            {CheckIfHeadTargetReached, "CheckIfHeadTargetReached"},
             {GetTargetPositionsAndRotations, "GetTargetPositionsAndRotations"},
             {InverseKinematicsToTarget, "InverseKinematicsToTarget"},
             {CheckIfTargetReached, "CheckIfTargetReached"},

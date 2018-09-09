@@ -66,6 +66,7 @@ public:
         distCoeffs = Mat(1, 5, CV_32FC1, D);
 
         detectorParams = aruco::DetectorParameters::create();
+        detectorParams->cornerRefinementMethod = cv::aruco::CORNER_REFINE_SUBPIX;
         detectorParams->cornerRefinementMaxIterations = 100;
         dictionary = aruco::getPredefinedDictionary(aruco::PREDEFINED_DICTIONARY_NAME(cv::aruco::DICT_ARUCO_ORIGINAL));
 
@@ -98,63 +99,70 @@ public:
 
 public:
     void OnUpdate(const common::UpdateInfo & /*_info*/) {
-        if ((ros::Time::now() - last_published).toSec() < 0.005)
+        if ((ros::Time::now() - last_published).toSec() < 0.033)
             return;
         last_published = ros::Time::now();
         int message_counter = 1000;
+        tf::StampedTransform trans;
+        try {
+            tf_listener.lookupTransform("world", "head", ros::Time(0), trans);
+        }
+        catch (tf::TransformException ex) {
+            ROS_WARN_THROTTLE(1, "%s", ex.what());
+        }
+        math::Pose pose_head;
+        pose_head.pos.x = trans.getOrigin().x();
+        pose_head.pos.y = trans.getOrigin().y();
+        pose_head.pos.z = trans.getOrigin().z();
+        pose_head.rot.x = trans.getRotation().x();
+        pose_head.rot.y = trans.getRotation().y();
+        pose_head.rot.z = trans.getRotation().z();
+        pose_head.rot.w = trans.getRotation().w();
         for (auto link:model->GetLinks()) {
-            if (link->GetName() == "head") {
-                tf::StampedTransform trans;
-                try {
-                    tf_listener.lookupTransform("world", "head", ros::Time(0), trans);
-                }
-                catch (tf::TransformException ex) {
-                    ROS_WARN_THROTTLE(1, "%s", ex.what());
-                    continue;
-                }
-                trans.getOrigin();
-                math::Pose pose;
-                pose.pos.x = trans.getOrigin().x();
-                pose.pos.y = trans.getOrigin().y();
-                pose.pos.z = trans.getOrigin().z();
-                pose.rot.x = trans.getRotation().x();
-                pose.rot.y = trans.getRotation().y();
-                pose.rot.z = trans.getRotation().z();
-                pose.rot.w = trans.getRotation().w();
+            string link_name = link->GetName();
+            if ( link_name == "head") {
+                link->SetWorldPose(pose_head);
+                tf::Transform trans;
+                trans.setRotation(tf::Quaternion(0,0,0,1));
+                trans.setOrigin(tf::Vector3(-0.061, -0.128, 0.073));
+                tf_broadcaster.sendTransform(
+                        tf::StampedTransform(trans, ros::Time::now(), "head", "zed_camera_right_lense"));
+                trans.setOrigin(tf::Vector3(0.059, -0.128, 0.073));
+                tf_broadcaster.sendTransform(
+                        tf::StampedTransform(trans, ros::Time::now(), "head", "zed_camera_left_lense"));
+            }
+            math::Pose pose = link->GetWorldPose();
+            pose.rot.Normalize();
 
-                link->SetWorldPose(pose);
-            } else {
-                math::Pose pose = link->GetWorldPose();
-                pose.rot.Normalize();
+            visualization_msgs::Marker mesh;
+            mesh.header.frame_id = "world";
+            mesh.ns = "cup_table";
+            mesh.type = visualization_msgs::Marker::MESH_RESOURCE;
+            mesh.color.r = 1.0f;
+            mesh.color.g = 1.0f;
+            mesh.color.b = 1.0f;
+            mesh.color.a = 1;
+            mesh.scale.x = 0.001;
+            mesh.scale.y = 0.001;
+            mesh.scale.z = 0.001;
+            mesh.lifetime = ros::Duration(0);
+            mesh.header.stamp = ros::Time::now();
+            mesh.action = visualization_msgs::Marker::ADD;
+            mesh.id = message_counter++;
 
-                visualization_msgs::Marker mesh;
-                mesh.header.frame_id = "world";
-                mesh.ns = "cup_table";
-                mesh.type = visualization_msgs::Marker::MESH_RESOURCE;
-                mesh.color.r = 1.0f;
-                mesh.color.g = 1.0f;
-                mesh.color.b = 1.0f;
-                mesh.color.a = 1;
-                mesh.scale.x = 0.001;
-                mesh.scale.y = 0.001;
-                mesh.scale.z = 0.001;
-                mesh.lifetime = ros::Duration(0);
-                mesh.header.stamp = ros::Time::now();
-                mesh.action = visualization_msgs::Marker::ADD;
-                mesh.id = message_counter++;
-
-                mesh.pose.position.x = pose.pos.x;
-                mesh.pose.position.y = pose.pos.y;
-                mesh.pose.position.z = pose.pos.z;
-                mesh.pose.orientation.x = pose.rot.x;
-                mesh.pose.orientation.y = pose.rot.y;
-                mesh.pose.orientation.z = pose.rot.z;
-                mesh.pose.orientation.w = pose.rot.w;
-                char meshpath[200];
-                sprintf(meshpath, "package://roboy_models/%s/meshes/CAD/%s.stl",
-                        model->GetName().c_str(), link->GetName().c_str());
-                mesh.mesh_resource = meshpath;
-                visualization_pub.publish(mesh);
+            mesh.pose.position.x = pose.pos.x;
+            mesh.pose.position.y = pose.pos.y;
+            mesh.pose.position.z = pose.pos.z;
+            mesh.pose.orientation.x = pose.rot.x;
+            mesh.pose.orientation.y = pose.rot.y;
+            mesh.pose.orientation.z = pose.rot.z;
+            mesh.pose.orientation.w = pose.rot.w;
+            char meshpath[200];
+            sprintf(meshpath, "package://roboy_models/%s/meshes/CAD/%s.stl",
+                    model->GetName().c_str(), link->GetName().c_str());
+            mesh.mesh_resource = meshpath;
+            visualization_pub.publish(mesh);
+            if (link_name != "head") { // head is published by caspr
                 tf::Transform trans;
                 trans.setRotation(tf::Quaternion(pose.rot.x, pose.rot.y, pose.rot.z, pose.rot.w));
                 trans.setOrigin(tf::Vector3(pose.pos.x, pose.pos.y, pose.pos.z));
