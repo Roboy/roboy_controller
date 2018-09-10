@@ -11,6 +11,10 @@ log: 0
 active_endeffector: "wrist_left_1"
 end_effectors:
   ["head","wrist_left_1"]
+
+elbow_left:
+  Kp: 10
+  Kd: 0
 head:
   Kp: 1
   Kd: 0
@@ -34,8 +38,8 @@ wrist_left_1:
   target_vel: [0,0,0,0,0,0]
   kinematic_chain: ["base","wrist_left_1"]
   joint_angle_mask: 0x40
-  control: 1
-  fpga_id: 0
+  control: 0
+  fpga_id: 3
 
 wrist_right_1:
   Kp: 1

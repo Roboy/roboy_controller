@@ -48,6 +48,44 @@ Roboy::Roboy() {
     fmt = Eigen::IOFormat(4, 0, " ", ";\n", "", "", "[", "]");
 
     reset_srv = nh->advertiseService("/CASPR/reset", &Roboy::ResetService, this);
+    motor_config_srv = nh->serviceClient<roboy_communication_middleware::MotorConfigService>("/roboy/shoulder_left/middleware/MotorConfig");
+    roboy_communication_middleware::MotorConfigService msg;
+    msg.request.config.id = SHOULDER_LEFT;
+    for(int motor=0;motor<NUMBER_OF_MOTORS_PER_FPGA;motor++){
+        msg.request.config.motors.push_back(motor);
+        if(motor<NUMBER_OF_MOTORS_MYOCONTROL_0){ // position control for myoControl 0
+            msg.request.config.control_mode.push_back(POSITION);
+            msg.request.config.outputPosMax.push_back(1000);
+            msg.request.config.outputNegMax.push_back(-1000);
+            msg.request.config.spPosMax.push_back(1000000);
+            msg.request.config.spNegMax.push_back(-1000000);
+            msg.request.config.Kp.push_back(1);
+            msg.request.config.Ki.push_back(0);
+            msg.request.config.Kd.push_back(0);
+            msg.request.config.forwardGain.push_back(0);
+            msg.request.config.deadBand.push_back(0);
+            msg.request.config.IntegralPosMax.push_back(0);
+            msg.request.config.IntegralNegMax.push_back(0);
+            msg.request.config.outputDivider.push_back(1);
+        }else{
+            msg.request.config.control_mode.push_back(DISPLACEMENT);
+            msg.request.config.outputPosMax.push_back(1000);
+            msg.request.config.outputNegMax.push_back(-1000);
+            msg.request.config.spPosMax.push_back(500);
+            msg.request.config.spNegMax.push_back(0);
+            msg.request.config.Kp.push_back(100);
+            msg.request.config.Ki.push_back(0);
+            msg.request.config.Kd.push_back(0);
+            msg.request.config.forwardGain.push_back(0);
+            msg.request.config.deadBand.push_back(0);
+            msg.request.config.IntegralPosMax.push_back(0);
+            msg.request.config.IntegralNegMax.push_back(0);
+            msg.request.config.outputDivider.push_back(1);
+        }
+    }
+    if(motor_config_srv.call(msg)){
+        ROS_WARN("could not change motor config");
+    }
 }
 
 Roboy::~Roboy() {

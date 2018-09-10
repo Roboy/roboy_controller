@@ -10,6 +10,8 @@
 #include "roboy_communication_middleware/Record.h"
 #include "roboy_communication_middleware/RoboyState.h"
 #include "roboy_communication_middleware/MotorStatus.h"
+#include "roboy_communication_middleware/MotorConfig.h"
+#include "roboy_communication_middleware/MotorConfigService.h"
 #include "roboy_communication_middleware/ArucoPose.h"
 #include <thread>
 #include <vector>
@@ -66,6 +68,7 @@ private:
 
     ros::NodeHandlePtr nh;
     ros::ServiceServer reset_srv;
+    ros::ServiceClient motor_config_srv;
     ros::Time prev_time;
     boost::shared_ptr<ros::AsyncSpinner> spinner;
 
