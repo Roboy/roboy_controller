@@ -31,7 +31,8 @@ typedef enum {
     CheckTargetFrames,
     GetTargetPositionsAndRotations,
     InverseKinematicsToTarget,
-    CheckIfTargetReached
+    CheckIfTargetReached,
+    TrackRealHardwareToTarget
 } ActionState;
 
 class Roboy:private rviz_visualization{

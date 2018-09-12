@@ -38,7 +38,7 @@ wrist_left_1:
   target_vel: [0,0,0,0,0,0]
   kinematic_chain: ["base","wrist_left_1"]
   joint_angle_mask: 0x40
-  control: 0
+  control: 1
   fpga_id: 3
 
 wrist_right_1:

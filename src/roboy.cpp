@@ -261,6 +261,24 @@ void Roboy::main_loop() {
                         allTargetsReached = false;
                     }
                 }
+                if(allTargetsReached||control[caspr[1]->end_effektor_name]==0){
+                    nextState = TrackRealHardwareToTarget;
+                }else{
+                    nextState = CheckTargetFrames;
+                }
+                break;
+            case TrackRealHardwareToTarget:
+                ROS_WARN_THROTTLE(1,"Publishing to real Roboy");
+                roboy_communication_middleware::MotorCommand msg;
+                msg.id = SHOULDER_LEFT;
+                for (int i = 0; i < NUMBER_OF_MOTORS_MYOCONTROL_0; i++) {
+                    msg.motors.push_back(i);
+                    msg.setPoints.push_back(-myoMuscleEncoderTicksPerMeter(caspr[1]->motor_pos[i])-caspr[1]->displacement_real[i] * 2.0); // *2.0 because of pulley +
+                }
+                caspr[1]->motorcommand_pub.publish(msg);
+                std_msgs::Float32 msg2;
+                msg2.data = caspr[1]->q[4]*180.0/M_PI;
+                caspr[1]->elbow_joint_pub.publish(msg2);
                 nextState = CheckTargetFrames;
                 break;
         }
