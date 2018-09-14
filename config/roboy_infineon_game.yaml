@@ -1,20 +1,14 @@
-number_of_fpgas: 5
-number_of_motors: 13
-path_planning_pose: 3
-live_tracking: 0
+number_of_fpgas: 3
+number_of_motors: 34
 controller: 2
 max_force: 10000
 min_force: 10
 qp_print_level: 0
 qp_working_sets: 1000
 log: 0
-active_endeffector: "wrist_left_1"
 end_effectors:
   ["head","wrist_left_1"]
 
-elbow_left:
-  Kp: 10
-  Kd: 0
 head:
   Kp: 1
   Kd: 0
@@ -52,4 +46,13 @@ wrist_right_1:
   kinematic_chain: ["base","wrist_right_1"]
   joint_angle_mask: 0x1
   control: 1
-  fpga_id: 0
+  fpga_id: 4
+
+Idle: "CheckTargetFrames"
+CheckTargetFrames: "LookAtTarget"
+LookAtTarget: "CheckIfHeadTargetReached"
+CheckIfHeadTargetReached: "GetTargetPositionsAndRotations"
+GetTargetPositionsAndRotations: "InverseKinematicsToTarget"
+InverseKinematicsToTarget: "CheckIfTargetReached"
+CheckIfTargetReached: "CheckTargetFrames"
+TrackRealHardwareToTarget: "CheckTargetFrames"

@@ -90,16 +90,25 @@ private:
 
     //! current state of roboy
     ActionState currentState, nextState = CheckTargetFrames;
+    map<string,ActionState> stringToActionState = {
+            {"Idle", Idle},
+            {"LookAtTarget", LookAtTarget},
+            {"CheckIfHeadTargetReached", CheckIfHeadTargetReached},
+            {"CheckTargetFrames", CheckTargetFrames},
+            {"GetTargetPositionsAndRotations", GetTargetPositionsAndRotations},
+            {"InverseKinematicsToTarget", InverseKinematicsToTarget},
+            {"CheckIfTargetReached", CheckIfTargetReached}
+    };
 
     //! state strings describing each state
-    std::map<ActionState, std::string> state_strings = {
-            {CheckTargetFrames, "CheckTargetFrames"},
+    std::map<ActionState, std::string> actionStateToString = {
+            {Idle, "Idle"},
             {LookAtTarget, "LookAtTarget"},
             {CheckIfHeadTargetReached, "CheckIfHeadTargetReached"},
+            {CheckTargetFrames, "CheckTargetFrames"},
             {GetTargetPositionsAndRotations, "GetTargetPositionsAndRotations"},
             {InverseKinematicsToTarget, "InverseKinematicsToTarget"},
-            {CheckIfTargetReached, "CheckIfTargetReached"},
-            {Idle, "Idle"}
+            {CheckIfTargetReached, "CheckIfTargetReached"}
     };
 
     tf::TransformListener listener;

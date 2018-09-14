@@ -114,14 +114,16 @@ void Roboy::main_loop() {
     info_time_prev = ros::Time::now();
 
     while (ros::ok()) {
-        currentState = nextState;
+        string next_state_string;
+        nh->getParam(actionStateToString[currentState], next_state_string);
+        nextState = stringToActionState[next_state_string];
 
         const ros::Time time = ros::Time::now();
         const ros::Duration period = time - prev_time;
         prev_time = time;
 
         if ((ros::Time::now() - info_time_prev).toSec() > 5) {
-            ROS_INFO_STREAM( state_strings[currentState] <<
+            ROS_INFO_STREAM( actionStateToString[currentState] <<
                     (allTargetsReached ? " all targets reached" : " NOT all targets reached")
                             << endl << "control frequency " << 1.0 / period.toSec() << "Hz\nq_target "
                             << caspr[info_counter]->q_target.transpose().format(fmt)
@@ -139,15 +141,16 @@ void Roboy::main_loop() {
         write();
 
         switch (currentState) {
+            case Idle: {
+                ROS_INFO_THROTTLE(1,"Idleing");
+            }
             case CheckTargetFrames:
                 for (auto casp:caspr) {
                     nh->getParam(casp->end_effektor_name + "/target_frame", target_frame[casp->end_effektor_name]);
                 }
-                nextState = LookAtTarget;
                 break;
             case LookAtTarget:
                 lookAt("head", target_frame["wrist_left_1"]);
-                nextState = CheckIfHeadTargetReached;
                 break;
             case CheckIfHeadTargetReached: {
                 double norm = 0;
@@ -155,10 +158,7 @@ void Roboy::main_loop() {
                     if (((caspr[0]->joint_angle_mask >> i) & 0x1) == 0)
                         norm += abs(caspr[0]->q[i] - caspr[0]->q_target[i]);
                 }
-                if (norm < 0.01) {
-//                    ROS_INFO_THROTTLE(1,"head to reached target, error %.3lf ", norm);
-                    nextState = GetTargetPositionsAndRotations;
-                } else {
+                if (norm >= 0.01){
                     ROS_INFO_THROTTLE(1,"waiting for head to reach target, error %.3lf", norm);
                     nextState = LookAtTarget;
                 }
@@ -219,7 +219,6 @@ void Roboy::main_loop() {
                         new_target[casp->end_effektor_name] = false;
                     }
                 }
-                nextState = InverseKinematicsToTarget;
                 break;
             case InverseKinematicsToTarget:
                 for (auto casp:caspr) {
@@ -243,7 +242,6 @@ void Roboy::main_loop() {
                         }
                     }
                 }
-                nextState = CheckIfTargetReached;
                 break;
             case CheckIfTargetReached:
                 allTargetsReached = true;
@@ -263,8 +261,6 @@ void Roboy::main_loop() {
                 }
                 if(allTargetsReached||control[caspr[1]->end_effektor_name]==0){
                     nextState = TrackRealHardwareToTarget;
-                }else{
-                    nextState = CheckTargetFrames;
                 }
                 break;
             case TrackRealHardwareToTarget:
@@ -273,15 +269,15 @@ void Roboy::main_loop() {
                 msg.id = SHOULDER_LEFT;
                 for (int i = 0; i < NUMBER_OF_MOTORS_MYOCONTROL_0; i++) {
                     msg.motors.push_back(i);
-                    msg.setPoints.push_back(-myoMuscleEncoderTicksPerMeter(caspr[1]->motor_pos[i])-caspr[1]->displacement_real[i] * 2.0); // *2.0 because of pulley +
+                    msg.setPoints.push_back(-myoMuscleEncoderTicksPerMeter(caspr[1]->motor_pos[i])+caspr[1]->displacement_real[i] * 2.0); // *2.0 because of pulley +
                 }
                 caspr[1]->motorcommand_pub.publish(msg);
                 std_msgs::Float32 msg2;
                 msg2.data = caspr[1]->q[4]*180.0/M_PI;
                 caspr[1]->elbow_joint_pub.publish(msg2);
-                nextState = CheckTargetFrames;
                 break;
         }
+        currentState = nextState;
     }
 }
 

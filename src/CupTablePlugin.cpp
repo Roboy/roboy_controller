@@ -53,8 +53,8 @@ public:
         boost::shared_ptr<ros::AsyncSpinner> spinner = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(2));
         spinner->start();
 
-        left_zed_camera_sub = nh->subscribe("/zed/camera/left/image_raw", 1, &CupTablePlugin::leftCameraCB, this);
-        right_zed_camera_sub = nh->subscribe("/zed/camera/right/image_raw", 1, &CupTablePlugin::rightCameraCB, this);
+        left_zed_camera_sub = nh->subscribe("/zed/left/image_raw_color", 1, &CupTablePlugin::leftCameraCB, this);
+        right_zed_camera_sub = nh->subscribe("/zed/right/image_raw_color", 1, &CupTablePlugin::rightCameraCB, this);
 
         this->updateConnection = event::Events::ConnectWorldUpdateBegin(
                 boost::bind(&CupTablePlugin::OnUpdate, this, _1));
