@@ -89,7 +89,7 @@ private:
     double goto_timeout_sec = 5;
 
     //! current state of roboy
-    ActionState currentState, nextState = CheckTargetFrames;
+    ActionState currentState = Idle, nextState;
     map<string,ActionState> stringToActionState = {
             {"Idle", Idle},
             {"LookAtTarget", LookAtTarget},

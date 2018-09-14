@@ -21,5 +21,7 @@ head:
   joint_angle_mask: 0x0
   control: 0
   fpga_id: 0
+  number_of_motors: 6
 
-Idle: "Idle"
+Idle: "TrackRealHardwareToTarget"
+TrackRealHardwareToTarget: "TrackRealHardwareToTarget"

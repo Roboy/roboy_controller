@@ -21,6 +21,7 @@ head:
   joint_angle_mask: 0x1
   control: 0
   fpga_id: 0
+  number_of_motors: 4
 
 wrist_left_1:
   Kp: 1
@@ -34,6 +35,7 @@ wrist_left_1:
   joint_angle_mask: 0x40
   control: 1
   fpga_id: 3
+  number_of_motors: 9
 
 wrist_right_1:
   Kp: 1
@@ -47,6 +49,7 @@ wrist_right_1:
   joint_angle_mask: 0x1
   control: 1
   fpga_id: 4
+  number_of_motors: 9
 
 Idle: "CheckTargetFrames"
 CheckTargetFrames: "LookAtTarget"

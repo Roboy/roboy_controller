@@ -143,6 +143,7 @@ void Roboy::main_loop() {
         switch (currentState) {
             case Idle: {
                 ROS_INFO_THROTTLE(1,"Idleing");
+                break;
             }
             case CheckTargetFrames:
                 for (auto casp:caspr) {
@@ -265,16 +266,41 @@ void Roboy::main_loop() {
                 break;
             case TrackRealHardwareToTarget:
                 ROS_WARN_THROTTLE(1,"Publishing to real Roboy");
-                roboy_communication_middleware::MotorCommand msg;
-                msg.id = SHOULDER_LEFT;
-                for (int i = 0; i < NUMBER_OF_MOTORS_MYOCONTROL_0; i++) {
-                    msg.motors.push_back(i);
-                    msg.setPoints.push_back(-myoMuscleEncoderTicksPerMeter(caspr[1]->motor_pos[i])+caspr[1]->displacement_real[i] * 2.0); // *2.0 because of pulley +
+                for(auto casp:caspr) {
+                    int number_of_motors = 0;
+                    nh->getParam(casp->end_effektor_name+"/number_of_motors", number_of_motors);
+                    roboy_communication_middleware::MotorCommand msg;
+                    msg.id = casp->id;
+                    vector<int> motors = active_motors[casp->id];
+                    switch(casp->id) {
+                        case HEAD: {
+                            for (int i = 0; i < number_of_motors; i++) {
+                                msg.motors.push_back(motors[i]);
+                                msg.setPoints.push_back(-myoMuscleEncoderTicksPerMeter(caspr[1]->motor_pos[i]) +
+                                                        caspr[1]->displacement_real[i] * 2.0); // *2.0 because of pulley +
+                            }
+                            caspr[1]->motorcommand_pub.publish(msg);
+                            std_msgs::Float32 msg2;
+                            msg2.data = caspr[1]->q[4] * 180.0 / M_PI;
+                            caspr[1]->elbow_joint_pub.publish(msg2);
+                            break;
+                        }
+                        case SHOULDER_LEFT:{
+                            roboy_communication_middleware::MotorCommand msg;
+                            msg.id = SHOULDER_LEFT;
+                            for (int i = 0; i < number_of_motors; i++) {
+                                msg.motors.push_back(motors[i]);
+                                msg.setPoints.push_back(-myoMuscleEncoderTicksPerMeter(caspr[1]->motor_pos[i]) +
+                                                        caspr[1]->displacement_real[i] * 2.0); // *2.0 because of pulley +
+                            }
+                            caspr[1]->motorcommand_pub.publish(msg);
+                            std_msgs::Float32 msg2;
+                            msg2.data = caspr[1]->q[4] * 180.0 / M_PI;
+                            caspr[1]->elbow_joint_pub.publish(msg2);
+                            break;
+                        }
+                    }
                 }
-                caspr[1]->motorcommand_pub.publish(msg);
-                std_msgs::Float32 msg2;
-                msg2.data = caspr[1]->q[4]*180.0/M_PI;
-                caspr[1]->elbow_joint_pub.publish(msg2);
                 break;
         }
         currentState = nextState;
