@@ -15,13 +15,14 @@ head:
   target_frame: "cup_aruco_2"
   target_offset: [0,0,0]
   target_rotation: [0,0,0,1]
-  target_pos: [0,0,0,0]
-  target_vel: [0,0,0,0]
+  target_pos: [0,0,0]
+  target_vel: [0,0,0]
   kinematic_chain: ["torso","head"]
   joint_angle_mask: 0x0
   control: 0
   fpga_id: 0
   number_of_motors: 6
 
-Idle: "TrackRealHardwareToTarget"
-TrackRealHardwareToTarget: "TrackRealHardwareToTarget"
+Idle: "CheckIfTargetReached"
+CheckIfTargetReached: "TrackRealHardwareToTarget"
+TrackRealHardwareToTarget: "CheckIfTargetReached"

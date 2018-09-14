@@ -137,7 +137,7 @@ void Roboy::main_loop() {
             info_time_prev = ros::Time::now();
         }
 
-        read(0.2);
+        read(0.01);
         write();
 
         switch (currentState) {
@@ -260,7 +260,7 @@ void Roboy::main_loop() {
                         allTargetsReached = false;
                     }
                 }
-                if(allTargetsReached||control[caspr[1]->end_effektor_name]==0){
+                if(allTargetsReached){
                     nextState = TrackRealHardwareToTarget;
                 }
                 break;
@@ -276,13 +276,18 @@ void Roboy::main_loop() {
                         case HEAD: {
                             for (int i = 0; i < number_of_motors; i++) {
                                 msg.motors.push_back(motors[i]);
-                                msg.setPoints.push_back(-myoMuscleEncoderTicksPerMeter(caspr[1]->motor_pos[i]) +
-                                                        caspr[1]->displacement_real[i] * 2.0); // *2.0 because of pulley +
+                                switch(motor_type[HEAD][i]){
+                                    case MYOBRICK100N:
+                                        msg.setPoints.push_back(-myoBrick100NEncoderTicksPerMeter(casp->motor_pos[i]));
+                                        break;
+                                    case MYOBRICK300N:
+                                        msg.setPoints.push_back(-myoBrick300NEncoderTicksPerMeter(casp->motor_pos[i]));
+                                        break;
+
+                                }
                             }
-                            caspr[1]->motorcommand_pub.publish(msg);
+                            casp->motorcommand_pub.publish(msg);
                             std_msgs::Float32 msg2;
-                            msg2.data = caspr[1]->q[4] * 180.0 / M_PI;
-                            caspr[1]->elbow_joint_pub.publish(msg2);
                             break;
                         }
                         case SHOULDER_LEFT:{
@@ -290,13 +295,26 @@ void Roboy::main_loop() {
                             msg.id = SHOULDER_LEFT;
                             for (int i = 0; i < number_of_motors; i++) {
                                 msg.motors.push_back(motors[i]);
-                                msg.setPoints.push_back(-myoMuscleEncoderTicksPerMeter(caspr[1]->motor_pos[i]) +
-                                                        caspr[1]->displacement_real[i] * 2.0); // *2.0 because of pulley +
+                                switch(motor_type[HEAD][i]){
+                                    case MYOMUSCLE500N:
+                                        msg.setPoints.push_back(-myoMuscleEncoderTicksPerMeter(casp->motor_pos[i]) +
+                                                                casp->displacement_real[i] * 2.0);
+                                        break;
+                                    case MYOBRICK100N:
+                                        msg.setPoints.push_back(-myoBrick100NEncoderTicksPerMeter(casp->motor_pos[i]) +
+                                                                casp->displacement_real[i] * 2.0);
+                                        break;
+                                    case MYOBRICK300N:
+                                        msg.setPoints.push_back(-myoBrick300NEncoderTicksPerMeter(casp->motor_pos[i]) +
+                                                                casp->displacement_real[i] * 2.0);
+                                        break;
+
+                                }
                             }
-                            caspr[1]->motorcommand_pub.publish(msg);
+                            casp->motorcommand_pub.publish(msg);
                             std_msgs::Float32 msg2;
-                            msg2.data = caspr[1]->q[4] * 180.0 / M_PI;
-                            caspr[1]->elbow_joint_pub.publish(msg2);
+                            msg2.data = casp->q[4] * 180.0 / M_PI;
+                            casp->elbow_joint_pub.publish(msg2);
                             break;
                         }
                     }

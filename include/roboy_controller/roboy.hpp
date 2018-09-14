@@ -89,7 +89,7 @@ private:
     double goto_timeout_sec = 5;
 
     //! current state of roboy
-    ActionState currentState = Idle, nextState;
+    ActionState currentState = TrackRealHardwareToTarget, nextState;
     map<string,ActionState> stringToActionState = {
             {"Idle", Idle},
             {"LookAtTarget", LookAtTarget},
@@ -97,7 +97,8 @@ private:
             {"CheckTargetFrames", CheckTargetFrames},
             {"GetTargetPositionsAndRotations", GetTargetPositionsAndRotations},
             {"InverseKinematicsToTarget", InverseKinematicsToTarget},
-            {"CheckIfTargetReached", CheckIfTargetReached}
+            {"CheckIfTargetReached", CheckIfTargetReached},
+            {"TrackRealHardwareToTarget", TrackRealHardwareToTarget}
     };
 
     //! state strings describing each state
@@ -108,7 +109,8 @@ private:
             {CheckTargetFrames, "CheckTargetFrames"},
             {GetTargetPositionsAndRotations, "GetTargetPositionsAndRotations"},
             {InverseKinematicsToTarget, "InverseKinematicsToTarget"},
-            {CheckIfTargetReached, "CheckIfTargetReached"}
+            {CheckIfTargetReached, "CheckIfTargetReached"},
+            {TrackRealHardwareToTarget, "TrackRealHardwareToTarget"}
     };
 
     tf::TransformListener listener;
