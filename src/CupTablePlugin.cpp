@@ -53,8 +53,8 @@ public:
         boost::shared_ptr<ros::AsyncSpinner> spinner = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(2));
         spinner->start();
 
-        left_zed_camera_sub = nh->subscribe("/zed/left/image_raw_color", 1, &CupTablePlugin::leftCameraCB, this);
-        right_zed_camera_sub = nh->subscribe("/zed/right/image_raw_color", 1, &CupTablePlugin::rightCameraCB, this);
+//        left_zed_camera_sub = nh->subscribe("/zed/camera/left/image_raw_color", 1, &CupTablePlugin::leftCameraCB, this);
+//        right_zed_camera_sub = nh->subscribe("/zed/camera/right/image_raw_color", 1, &CupTablePlugin::rightCameraCB, this);
 
         this->updateConnection = event::Events::ConnectWorldUpdateBegin(
                 boost::bind(&CupTablePlugin::OnUpdate, this, _1));
@@ -70,10 +70,10 @@ public:
         detectorParams->cornerRefinementMaxIterations = 100;
         dictionary = aruco::getPredefinedDictionary(aruco::PREDEFINED_DICTIONARY_NAME(cv::aruco::DICT_ARUCO_ORIGINAL));
 
-        cv::namedWindow(ZED_LEFT);
-        cv::namedWindow(ZED_RIGHT);
-        moveWindow(ZED_LEFT, 0, 0);
-        moveWindow(ZED_RIGHT, 700, 0);
+//        cv::namedWindow(ZED_LEFT);
+//        cv::namedWindow(ZED_RIGHT);
+//        moveWindow(ZED_LEFT, 0, 0);
+//        moveWindow(ZED_RIGHT, 700, 0);
         ROS_WARN("cup table plugin ready");
     }
 
@@ -170,10 +170,10 @@ public:
                         tf::StampedTransform(trans, ros::Time::now(), "world", link->GetName().c_str()));
             }
         }
-        if (zed_right_ptr != nullptr && zed_left_ptr != nullptr) {
-            detectAruco();
-            cv::waitKey(1);
-        }
+//        if (zed_right_ptr != nullptr && zed_left_ptr != nullptr) {
+//            detectAruco();
+//            cv::waitKey(1);
+//        }
     }
 
     void detectAruco() {

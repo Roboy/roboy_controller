@@ -209,28 +209,6 @@ void Roboy::lookAt(const roboy_communication_control::LookAtGoalConstPtr &goal) 
 
     bool success = true;
     tf::StampedTransform root_transform, target_transform;
-    try {
-        if (listener.waitForTransform("world", goal->root_frame.c_str(), ros::Time(0), ros::Duration(0.01)))
-            listener.lookupTransform("world", goal->root_frame.c_str(), ros::Time(0), root_transform);
-        else {
-            success = false;
-            lookAt_as->setAborted(result, ("could not find root frame" + goal->root_frame));
-        }
-        if (goal->type == 1) {
-            if (listener.waitForTransform("world", goal->target_frame.c_str(), ros::Time(0), ros::Duration(0.01)))
-                listener.lookupTransform("world", goal->target_frame.c_str(), ros::Time(0), target_transform);
-            else {
-                success = false;
-                lookAt_as->setAborted(result, ("could not find target frame " + goal->target_frame));
-            }
-        } else {
-            target_transform.setOrigin(tf::Vector3(goal->point.x, goal->point.y, goal->point.z));
-        }
-    }
-    catch (tf::LookupException ex) {
-        ROS_WARN_THROTTLE(1, "%s", ex.what());
-        lookAt_as->setSucceeded(result, "tf failed");
-    }
 
     nh.getParam("controller", casp->controller);
     switch (casp->controller) {
@@ -252,22 +230,16 @@ void Roboy::lookAt(const roboy_communication_control::LookAtGoalConstPtr &goal) 
     tf::transformTFToEigen(target_transform, target);
 
     double error = 10000;
-    ros::Time last_feedback_time = ros::Time::now();
-    while (error > 0.001 && success) {
+    ros::Time last_feedback_time = ros::Time::now(), start_time = ros::Time::now();
+    while (error > 0.01 && success) {
         try {
             if (listener.waitForTransform("world", goal->root_frame.c_str(), ros::Time(0), ros::Duration(0.01))) {
                 listener.lookupTransform("world", goal->root_frame.c_str(), ros::Time(0), root_transform);
-            } else {
-                success = false;
-                lookAt_as->setAborted(result, ("could not find root frame" + goal->root_frame));
             }
             if (goal->type == 1) {
                 if (listener.waitForTransform("world", goal->target_frame.c_str(), ros::Time(0), ros::Duration(0.01))) {
                     listener.lookupTransform("world", goal->target_frame.c_str(), ros::Time(0), target_transform);
                     tf::transformTFToEigen(target_transform, target);
-                } else {
-                    success = false;
-                    lookAt_as->setAborted(result, ("could not find target frame " + goal->target_frame));
                 }
             }
         }
@@ -314,10 +286,14 @@ void Roboy::lookAt(const roboy_communication_control::LookAtGoalConstPtr &goal) 
             success = false;
             break;
         }
+
+        if((ros::Time::now()-start_time).toSec()>10){
+            success = false;
+        }
     }
     // publish the feedback
     lookAt_as->publishFeedback(feedback);
-    if (error < 0.001 && success) {
+    if (error < 0.01 && success) {
         ROS_INFO("MoveEndEffector: Succeeded");
         lookAt_as->setSucceeded(result, "done");
     } else {
@@ -338,7 +314,7 @@ void Roboy::moveEndEffector(const roboy_communication_control::MoveEndEffectorGo
     bool success = true;
 
     double error = 10000;
-    ros::Time last_feedback_time = ros::Time::now();
+    ros::Time last_feedback_time = ros::Time::now(), start_time = ros::Time::now();
     bool ik_solution_available = false;
 
     CASPRptr casp = casprByName[goal->endEffector];
@@ -394,8 +370,7 @@ void Roboy::moveEndEffector(const roboy_communication_control::MoveEndEffectorGo
     srv.request.pose.orientation.y = goal->pose.orientation.y;
     srv.request.pose.orientation.z = goal->pose.orientation.z;
     srv.request.pose.orientation.w = goal->pose.orientation.w;
-
-    while (error > 0.001 && success) {
+    while (error > 0.01 && success) {
         if (moveEndEffector_as->isPreemptRequested() || !ros::ok()) {
             ROS_INFO("LookAt: Preempted");
             // set the action state to preempted
@@ -436,10 +411,13 @@ void Roboy::moveEndEffector(const roboy_communication_control::MoveEndEffectorGo
             feedback.error = error;
             moveEndEffector_as->publishFeedback(feedback);
         }
+        if((ros::Time::now()-start_time).toSec()>30){
+            success = false;
+        }
     }
     // publish the feedback
     moveEndEffector_as->publishFeedback(feedback);
-    if (error < 0.001 && success) {
+    if (error < 0.01 && success) {
         ROS_INFO("MoveEndEffector: Succeeded");
         moveEndEffector_as->setSucceeded(result, "done");
     } else {

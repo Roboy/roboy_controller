@@ -75,6 +75,13 @@
           output="screen"
           args="$(arg model_name)"
     />
+
+    <node name="roboy_state_estimator"
+          pkg="roboy_state_estimator"
+          type="roboy_state_estimator"
+          respawn="false"
+          output="screen"
+    />
 </launch>
         <!--launch-prefix="gdb -ex run"-->
         <!--launch-prefix="gdb -ex run"-->
