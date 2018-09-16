@@ -11,13 +11,13 @@ end_effectors:
 
 head:
   ForceControl:
-    Kp: 100
+    Kp: 1000
     Kd: 10
   TorqueControl:
-    Kp: 100
+    Kp: 1000
     Kd: 10
   PositionControl:
-    Kp: 100
+    Kp: 1000
     Kd: 0
   target_frame: "cup_aruco_2"
   target_offset: [0,0,0]
@@ -32,13 +32,13 @@ head:
 
 wrist_left_1:
   ForceControl:
-    Kp: 100
+    Kp: 1000
     Kd: 10
   TorqueControl:
-    Kp: 100
+    Kp: 1000
     Kd: 10
   PositionControl:
-    Kp: 100
+    Kp: 1000
     Kd: 0
   target_frame: "cup_aruco_2"
   target_offset: [0,0.05,0.1]
