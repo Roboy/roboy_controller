@@ -45,6 +45,24 @@ Roboy::Roboy() {
     }
     ROS_INFO_STREAM(str.str());
 
+    str.clear();
+    for(auto casp:caspr){
+        for(int j=0;j<casp->number_of_dofs;j++) {
+            if (((casp->joint_angle_mask >> j) & 0x1) == 0) {
+                if (find(joint_names.begin(), joint_names.end(), casp->joint_names[j]) != joint_names.end()) {
+                    ROS_FATAL("mmultiple endeffectors are controlling joint %s, check your joint angle masks",
+                              casp->joint_names[j].c_str());
+                } else {
+                    joint_names.push_back(casp->joint_names[j]);
+                    q[casp->joint_names[j]] = &casp->q[j];
+                    qd[casp->joint_names[j]] = &casp->qd[j];
+                    str << casp->joint_names[j] << "\t";
+                }
+            }
+        }
+    }
+    ROS_INFO_STREAM(str.str());
+
     fmt = Eigen::IOFormat(4, 0, " ", ";\n", "", "", "[", "]");
 
     reset_srv = nh->advertiseService("/CASPR/reset", &Roboy::ResetService, this);
@@ -86,6 +104,7 @@ Roboy::Roboy() {
     if(motor_config_srv.call(msg)){
         ROS_WARN("could not change motor config");
     }
+    clearAll();
 }
 
 Roboy::~Roboy() {
@@ -101,8 +120,6 @@ void Roboy::read(double period) {
 void Roboy::write() {
     ROS_DEBUG("write");
     for (auto casp:caspr) {
-        nh->getParam(casp->end_effektor_name + "/Kp", Kp[casp->end_effektor_name]);
-        nh->getParam(casp->end_effektor_name + "/Kd", Kd[casp->end_effektor_name]);
         nh->getParam(casp->end_effektor_name + "/target_pos", casp->target_pos);
         nh->getParam(casp->end_effektor_name + "/target_vel", casp->target_vel);
         casp->updateController(Kp[casp->end_effektor_name], Kd[casp->end_effektor_name]);
@@ -137,12 +154,35 @@ void Roboy::main_loop() {
             info_time_prev = ros::Time::now();
         }
 
-        read(0.01);
+        read(0.001);
         write();
 
         switch (currentState) {
             case Idle: {
                 ROS_INFO_THROTTLE(1,"Idleing");
+                for (auto casp:caspr) {
+                    switch (casp->controller) {
+                        case 0:
+                            nh->getParam(casp->end_effektor_name + "/ForceControl/Kp", Kp[casp->end_effektor_name]);
+                            nh->getParam(casp->end_effektor_name + "/ForceControl/Kd", Kd[casp->end_effektor_name]);
+                            break;
+                        case 1:
+                            nh->getParam(casp->end_effektor_name + "/TorqueControl/Kp", Kp[casp->end_effektor_name]);
+                            nh->getParam(casp->end_effektor_name + "/TorqueControl/Kd", Kd[casp->end_effektor_name]);
+                            break;
+                        case 2:
+                            nh->getParam(casp->end_effektor_name + "/PositionControl/Kp", Kp[casp->end_effektor_name]);
+                            nh->getParam(casp->end_effektor_name + "/PositionControl/Kd", Kd[casp->end_effektor_name]);
+                            break;
+                    }
+                    for(int j=0;j<casp->number_of_dofs;j++) {
+                        // if joint angles is masked and someone is controlling that joint angle, update it
+                        if (((casp->joint_angle_mask >> j) & 0x1) == 1 && q[casp->joint_names[j]]!=nullptr) {
+                            casp->q[j] = *q[casp->joint_names[j]];
+                            casp->qd[j] = *qd[casp->joint_names[j]];
+                        }
+                    }
+                }
                 break;
             }
             case CheckTargetFrames:

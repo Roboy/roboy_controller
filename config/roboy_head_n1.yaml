@@ -1,6 +1,6 @@
 number_of_fpgas: 1
 number_of_motors: 16
-controller: 2
+controller: 1
 max_force: 10000
 min_force: 10
 qp_print_level: 0
@@ -10,8 +10,15 @@ end_effectors:
   ["head"]
 
 head:
-  Kp: 1
-  Kd: 0
+  ForceControl:
+      Kp: 100
+      Kd: 10
+  TorqueControl:
+    Kp: 100
+    Kd: 10
+  PositionControl:
+    Kp: 10
+    Kd: 0
   target_frame: "cup_aruco_2"
   target_offset: [0,0,0]
   target_rotation: [0,0,0,1]

@@ -86,10 +86,12 @@ private:
     map<string,string> target_frame;
     map<string,ros::Time> goto_start;
     map<string,int> control;
+    vector<string> joint_names;
+    map<string,double*> q,qd;
     double goto_timeout_sec = 5;
 
     //! current state of roboy
-    ActionState currentState = TrackRealHardwareToTarget, nextState;
+    ActionState currentState = Idle, nextState;
     map<string,ActionState> stringToActionState = {
             {"Idle", Idle},
             {"LookAtTarget", LookAtTarget},

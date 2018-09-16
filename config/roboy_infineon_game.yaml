@@ -10,8 +10,15 @@ end_effectors:
   ["head","wrist_left_1"]
 
 head:
-  Kp: 1
-  Kd: 0
+  ForceControl:
+    Kp: 100
+    Kd: 10
+  TorqueControl:
+    Kp: 100
+    Kd: 10
+  PositionControl:
+    Kp: 100
+    Kd: 0
   target_frame: "cup_aruco_2"
   target_offset: [0,0,0]
   target_rotation: [0,0,0,1]
@@ -24,8 +31,15 @@ head:
   number_of_motors: 4
 
 wrist_left_1:
-  Kp: 1
-  Kd: 0
+  ForceControl:
+    Kp: 100
+    Kd: 10
+  TorqueControl:
+    Kp: 100
+    Kd: 10
+  PositionControl:
+    Kp: 100
+    Kd: 0
   target_frame: "cup_aruco_2"
   target_offset: [0,0.05,0.1]
   target_rotation: [0.4864,0.54329,0.47472,-0.49285]
@@ -38,8 +52,15 @@ wrist_left_1:
   number_of_motors: 9
 
 wrist_right_1:
-  Kp: 1
-  Kd: 0
+  ForceControl:
+    Kp: 100
+    Kd: 10
+  TorqueControl:
+    Kp: 100
+    Kd: 10
+  PositionControl:
+    Kp: 100
+    Kd: 0
   target_frame: "wrist_right_1"
   target_offset: [0,0,0]
   target_rotation: [0,0,0,1]
@@ -51,7 +72,7 @@ wrist_right_1:
   fpga_id: 4
   number_of_motors: 9
 
-Idle: "CheckTargetFrames"
+Idle: "Idle"
 CheckTargetFrames: "LookAtTarget"
 LookAtTarget: "CheckIfHeadTargetReached"
 CheckIfHeadTargetReached: "GetTargetPositionsAndRotations"
