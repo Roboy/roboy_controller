@@ -147,8 +147,7 @@ void Roboy::sendToRealHardware(CASPRptr casp){
                 msg.motors.push_back(motors[i]);
                 switch (motor_type[SHOULDER_LEFT][i]) {
                     case MYOMUSCLE500N:
-                        msg.setPoints.push_back(-myoMuscleEncoderTicksPerMeter(casp->motor_pos[i]
-                                                                               + casp->displacement_real[i] * 2.0) );
+                        msg.setPoints.push_back(-myoMuscleEncoderTicksPerMeter((casp->motor_pos[i]- casp->displacement_real[i] * 2.0))); //
                         break;
                     case MYOBRICK100N:
                         msg.setPoints.push_back(-myoBrick100NEncoderTicksPerMeter(casp->motor_pos[i]
@@ -324,28 +323,49 @@ void Roboy::moveEndEffector(const roboy_communication_control::MoveEndEffectorGo
         return;
     }
 
-    Vector3d target_position(goal->pose.position.x, goal->pose.position.y, goal->pose.position.z);
-
-    if (goal->type == 1) {
-        tf::StampedTransform trans;
-        try {
-            if (listener.waitForTransform("world", goal->target_frame.c_str(),
-                                          ros::Time(0), ros::Duration(0.0001))) {
-                listener.lookupTransform("world", goal->target_frame.c_str(),
-                                         ros::Time(0), trans);
-                target_position[0] = trans.getOrigin().x() + goal->pose.position.x;
-                target_position[1] = trans.getOrigin().y() + goal->pose.position.y;
-                target_position[2] = trans.getOrigin().z() + goal->pose.position.z;
-            } else {
-                ROS_ERROR("target frame %s is not available", goal->target_frame.c_str());
+    Vector3d target_position;
+    switch (goal->type){
+        case 0: {
+            target_position[0] = goal->pose.position.x;
+            target_position[1] = goal->pose.position.y;
+            target_position[2] = goal->pose.position.z;
+            break;
+        }
+        case 1: {
+            tf::StampedTransform trans;
+            try {
+                if (listener.waitForTransform("world", goal->target_frame.c_str(),
+                                              ros::Time(0), ros::Duration(0.0001))) {
+                    listener.lookupTransform("world", goal->target_frame.c_str(),
+                                             ros::Time(0), trans);
+                    target_position[0] = trans.getOrigin().x() + goal->pose.position.x;
+                    target_position[1] = trans.getOrigin().y() + goal->pose.position.y;
+                    target_position[2] = trans.getOrigin().z() + goal->pose.position.z;
+                } else {
+                    ROS_ERROR("target frame %s is not available", goal->target_frame.c_str());
+                    success = false;
+                }
+            }
+            catch (tf::LookupException ex) {
+                ROS_WARN("%s", ex.what());
                 success = false;
             }
+            break;
         }
-        catch (tf::LookupException ex) {
-            ROS_WARN("%s", ex.what());
-            success = false;
+        case 2: {
+            if(goal->q_target.size()!=casp->number_of_dofs){
+                ROS_ERROR("number of requested dofs does not match endeffector dofs");
+                success = false;
+            }else {
+                for (int i = 0; i < casp->number_of_dofs; i++) {
+                    casp->q_target[i] = goal->q_target[i];
+                }
+            }
+            break;
         }
+        default: success = false;
     }
+
     nh.getParam("controller", casp->controller);
     switch (casp->controller) {
         case 0:
@@ -379,15 +399,19 @@ void Roboy::moveEndEffector(const roboy_communication_control::MoveEndEffectorGo
             break;
         }
 
-        if (!ik_solution_available) {
+        if (!ik_solution_available && (goal->type==0 || goal->type==1)) {
             if (casp->InverseKinematicsService(srv.request, srv.response)) {
                 ik_solution_available = true;
+                for (int i = 0; i < casp->number_of_dofs; i++) {
+                    casp->q_target[i] = srv.response.angles[i];
+                }
             } else {
                 ik_solution_available = false;
             }
-        } else {
+        }
+
+        if(ik_solution_available || goal->type==2){
             for (int i = 0; i < casp->number_of_dofs; i++) {
-                casp->q_target[i] = srv.response.angles[i];
                 // if joint angle is masked and someone is controlling that joint angle, update it
                 if (((casp->joint_angle_mask >> i) & 0x1) == 1 && q[casp->joint_names[i]] != nullptr) {
                     casp->q[i] = *q[casp->joint_names[i]];
