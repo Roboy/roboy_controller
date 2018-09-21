@@ -58,43 +58,6 @@ Roboy::Roboy() {
     reset_srv = nh.advertiseService("/CASPR/reset", &Roboy::ResetService, this);
     motor_config_srv = nh.serviceClient<roboy_communication_middleware::MotorConfigService>(
             "/roboy/shoulder_left/middleware/MotorConfig");
-    roboy_communication_middleware::MotorConfigService msg;
-    msg.request.config.id = SHOULDER_LEFT;
-    for (int motor = 0; motor < NUMBER_OF_MOTORS_PER_FPGA; motor++) {
-        msg.request.config.motors.push_back(motor);
-        if (motor < NUMBER_OF_MOTORS_MYOCONTROL_0) { // position control for myoControl 0
-            msg.request.config.control_mode.push_back(POSITION);
-            msg.request.config.outputPosMax.push_back(1000);
-            msg.request.config.outputNegMax.push_back(-1000);
-            msg.request.config.spPosMax.push_back(1000000);
-            msg.request.config.spNegMax.push_back(-1000000);
-            msg.request.config.Kp.push_back(1);
-            msg.request.config.Ki.push_back(0);
-            msg.request.config.Kd.push_back(0);
-            msg.request.config.forwardGain.push_back(0);
-            msg.request.config.deadBand.push_back(0);
-            msg.request.config.IntegralPosMax.push_back(0);
-            msg.request.config.IntegralNegMax.push_back(0);
-            msg.request.config.outputDivider.push_back(1);
-        } else {
-            msg.request.config.control_mode.push_back(DISPLACEMENT);
-            msg.request.config.outputPosMax.push_back(1000);
-            msg.request.config.outputNegMax.push_back(-1000);
-            msg.request.config.spPosMax.push_back(500);
-            msg.request.config.spNegMax.push_back(0);
-            msg.request.config.Kp.push_back(100);
-            msg.request.config.Ki.push_back(0);
-            msg.request.config.Kd.push_back(0);
-            msg.request.config.forwardGain.push_back(0);
-            msg.request.config.deadBand.push_back(0);
-            msg.request.config.IntegralPosMax.push_back(0);
-            msg.request.config.IntegralNegMax.push_back(0);
-            msg.request.config.outputDivider.push_back(1);
-        }
-    }
-    if (motor_config_srv.call(msg)) {
-        ROS_WARN("could not change motor config");
-    }
     clearAll();
 
     lookAt_as.reset(new actionlib::SimpleActionServer<roboy_communication_control::LookAtAction>(nh, "Roboy/LookAt",
@@ -164,6 +127,8 @@ void Roboy::sendToRealHardware(CASPRptr casp){
             std_msgs::Float32 msg2;
             msg2.data = casp->q[4] * 180.0 / M_PI;
             casp->elbow_joint_pub.publish(msg2);
+            msg2.data = casp->q[5] * 180.0 / M_PI;
+            casp->wrist_joint_pub.publish(msg2);
             break;
         }
     }
@@ -205,6 +170,8 @@ void Roboy::lookAt(const roboy_communication_control::LookAtGoalConstPtr &goal) 
         lookAt_as->setAborted(result, "endeffector " + goal->endEffector + " does not exist");
         return;
     }
+
+    setControlMode(casp);
 
     bool success = true;
     tf::StampedTransform root_transform, target_transform;
@@ -322,6 +289,8 @@ void Roboy::moveEndEffector(const roboy_communication_control::MoveEndEffectorGo
         moveEndEffector_as->setAborted(result, "endeffector " + goal->endEffector + " does not exist");
         return;
     }
+
+    setControlMode(casp);
 
     Vector3d target_position;
     switch (goal->type){
@@ -458,6 +427,46 @@ bool Roboy::ResetService(std_srvs::Empty::Request &req,
         casp->init();
     }
     return true;
+}
+
+void Roboy::setControlMode(CASPRptr casp){
+    roboy_communication_middleware::MotorConfigService msg;
+    msg.request.config.id = casp->id;
+    for (int motor = 0; motor < NUMBER_OF_MOTORS_PER_FPGA; motor++) {
+        msg.request.config.motors.push_back(motor);
+        if (motor < NUMBER_OF_MOTORS_MYOCONTROL_0) { // position control for myoControl 0
+            msg.request.config.control_mode.push_back(POSITION);
+            msg.request.config.outputPosMax.push_back(1000);
+            msg.request.config.outputNegMax.push_back(-1000);
+            msg.request.config.spPosMax.push_back(1000000);
+            msg.request.config.spNegMax.push_back(-1000000);
+            msg.request.config.Kp.push_back(1);
+            msg.request.config.Ki.push_back(0);
+            msg.request.config.Kd.push_back(0);
+            msg.request.config.forwardGain.push_back(0);
+            msg.request.config.deadBand.push_back(0);
+            msg.request.config.IntegralPosMax.push_back(0);
+            msg.request.config.IntegralNegMax.push_back(0);
+            msg.request.config.outputDivider.push_back(1);
+        } else {
+            msg.request.config.control_mode.push_back(DISPLACEMENT);
+            msg.request.config.outputPosMax.push_back(1000);
+            msg.request.config.outputNegMax.push_back(-1000);
+            msg.request.config.spPosMax.push_back(500);
+            msg.request.config.spNegMax.push_back(0);
+            msg.request.config.Kp.push_back(100);
+            msg.request.config.Ki.push_back(0);
+            msg.request.config.Kd.push_back(0);
+            msg.request.config.forwardGain.push_back(0);
+            msg.request.config.deadBand.push_back(0);
+            msg.request.config.IntegralPosMax.push_back(0);
+            msg.request.config.IntegralNegMax.push_back(0);
+            msg.request.config.outputDivider.push_back(1);
+        }
+    }
+    if (motor_config_srv.call(msg)) {
+        ROS_WARN("could not change motor config");
+    }
 }
 
 int main(int argc, char *argv[]) {

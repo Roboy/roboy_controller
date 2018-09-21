@@ -52,6 +52,8 @@ private:
     bool ResetService(std_srvs::Empty::Request &req,
                       std_srvs::Empty::Response &res);
 
+    void setControlMode(CASPRptr casp);
+
     ros::NodeHandle nh;
     boost::shared_ptr<actionlib::SimpleActionServer<roboy_communication_control::LookAtAction>> lookAt_as;
     boost::shared_ptr<actionlib::SimpleActionServer<roboy_communication_control::MoveEndEffectorAction>> moveEndEffector_as;

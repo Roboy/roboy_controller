@@ -31,6 +31,12 @@ def main():
     pose.orientation.w = -0.49285
     # Open the container
     with sq:
+        # Sequence.add('MOVEHOME', SimpleActionState('/Roboy/MoveEndEffector',
+        #                                            roboy_communication_control.msg.MoveEndEffectorAction,
+        #                                            goal=roboy_communication_control.msg.MoveEndEffectorGoal(
+        #                                                endEffector='wrist_left_1',
+        #                                                type=2,
+        #                                                q_target=[0,0,0,0,0,-0.2,0], sendToRealHardware=False)))
         Sequence.add('MOVEHOME', SimpleActionState('/Roboy/MoveEndEffector',
                                                     roboy_communication_control.msg.MoveEndEffectorAction,
                                                     goal=roboy_communication_control.msg.MoveEndEffectorGoal(
@@ -43,24 +49,48 @@ def main():
                                                        endEffector='wrist_left_1',
                                                        type=2,
                                                        q_target=[0,-1.5,0,0,0,0,0], sendToRealHardware=True)))
-        Sequence.add('MOVEFRONT', SimpleActionState('/Roboy/MoveEndEffector',
+        Sequence.add('MOVEELBOW0', SimpleActionState('/Roboy/MoveEndEffector',
                                                  roboy_communication_control.msg.MoveEndEffectorAction,
                                                  goal=roboy_communication_control.msg.MoveEndEffectorGoal(
                                                      endEffector='wrist_left_1',
                                                      type=2,
-                                                     q_target=[0,-1.5,-1.1,0,0,0,0], sendToRealHardware=True)))
-        Sequence.add('MOVEFRONT2', SimpleActionState('/Roboy/MoveEndEffector',
+                                                     q_target=[0,-1.5,0,0,0.5,0,0], sendToRealHardware=True)))
+        Sequence.add('MOVEELBOW1', SimpleActionState('/Roboy/MoveEndEffector',
                                                     roboy_communication_control.msg.MoveEndEffectorAction,
                                                     goal=roboy_communication_control.msg.MoveEndEffectorGoal(
                                                         endEffector='wrist_left_1',
                                                         type=2,
-                                                        q_target=[0,-1.5,-0.5,0,0,0,0], sendToRealHardware=True)))
-        Sequence.add('MOVEUP2', SimpleActionState('/Roboy/MoveEndEffector',
+                                                        q_target=[0,-1.5,0,0,0,0,0], sendToRealHardware=True)))
+        Sequence.add('MOVEWRIST0', SimpleActionState('/Roboy/MoveEndEffector',
                                                  roboy_communication_control.msg.MoveEndEffectorAction,
                                                  goal=roboy_communication_control.msg.MoveEndEffectorGoal(
                                                      endEffector='wrist_left_1',
                                                      type=2,
-                                                     q_target=[0,-1.5,0,0,0,0,0], sendToRealHardware=True)))
+                                                     q_target=[0,-1.5,0,0,0,1.5,0], sendToRealHardware=True)))
+        Sequence.add('MOVEWRIST1', SimpleActionState('/Roboy/MoveEndEffector',
+                                                     roboy_communication_control.msg.MoveEndEffectorAction,
+                                                     goal=roboy_communication_control.msg.MoveEndEffectorGoal(
+                                                         endEffector='wrist_left_1',
+                                                         type=2,
+                                                         q_target=[0,-1.5,0,0,0,-1.5,0], sendToRealHardware=True)))
+        # Sequence.add('MOVEFRONT', SimpleActionState('/Roboy/MoveEndEffector',
+        #                                          roboy_communication_control.msg.MoveEndEffectorAction,
+        #                                          goal=roboy_communication_control.msg.MoveEndEffectorGoal(
+        #                                              endEffector='wrist_left_1',
+        #                                              type=2,
+        #                                              q_target=[0,-1.5,-1.1,0,0,0,0], sendToRealHardware=True)))
+        # Sequence.add('MOVEFRONT2', SimpleActionState('/Roboy/MoveEndEffector',
+        #                                             roboy_communication_control.msg.MoveEndEffectorAction,
+        #                                             goal=roboy_communication_control.msg.MoveEndEffectorGoal(
+        #                                                 endEffector='wrist_left_1',
+        #                                                 type=2,
+        #                                                 q_target=[0,-1.5,-0.5,0,0,0,0], sendToRealHardware=True)))
+        # Sequence.add('MOVEUP2', SimpleActionState('/Roboy/MoveEndEffector',
+        #                                          roboy_communication_control.msg.MoveEndEffectorAction,
+        #                                          goal=roboy_communication_control.msg.MoveEndEffectorGoal(
+        #                                              endEffector='wrist_left_1',
+        #                                              type=2,
+        #                                              q_target=[0,-1.5,0,0,0,0,0], sendToRealHardware=True)))
         Sequence.add('MOVEHOME2', SimpleActionState('/Roboy/MoveEndEffector',
                                                     roboy_communication_control.msg.MoveEndEffectorAction,
                                                     goal=roboy_communication_control.msg.MoveEndEffectorGoal(
