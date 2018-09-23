@@ -177,10 +177,12 @@ void Roboy::lookAt(const roboy_communication_control::LookAtGoalConstPtr &goal) 
     tf::StampedTransform root_transform, target_transform;
 
     nh.getParam("controller", casp->controller);
+    double timestep = 0.001;
     switch (casp->controller) {
         case 0:
             nh.getParam(casp->end_effektor_name + "/ForceControl/Kp", casp->Kp);
             nh.getParam(casp->end_effektor_name + "/ForceControl/Kd", casp->Kd);
+            timestep = 0.001;
             break;
         case 1:
             nh.getParam(casp->end_effektor_name + "/TorqueControl/Kp", casp->Kp);
@@ -189,6 +191,7 @@ void Roboy::lookAt(const roboy_communication_control::LookAtGoalConstPtr &goal) 
         case 2:
             nh.getParam(casp->end_effektor_name + "/PositionControl/Kp", casp->Kp);
             nh.getParam(casp->end_effektor_name + "/PositionControl/Kd", casp->Kd);
+            timestep = 0.00001;
             break;
     }
 
@@ -197,7 +200,7 @@ void Roboy::lookAt(const roboy_communication_control::LookAtGoalConstPtr &goal) 
 
     double error = 10000;
     ros::Time last_feedback_time = ros::Time::now(), start_time = ros::Time::now();
-    while (error > 0.01 && success) {
+    while (error > goal->tolerance && success) {
         try {
             if (listener.waitForTransform("world", goal->root_frame.c_str(), ros::Time(0), ros::Duration(0.01))) {
                 listener.lookupTransform("world", goal->root_frame.c_str(), ros::Time(0), root_transform);
@@ -229,7 +232,7 @@ void Roboy::lookAt(const roboy_communication_control::LookAtGoalConstPtr &goal) 
             }
         }
 
-        casp->update(0.00001);
+        casp->update(timestep);
         casp->updateController();
 
         if (goal->sendToRealHardware) {
@@ -253,13 +256,14 @@ void Roboy::lookAt(const roboy_communication_control::LookAtGoalConstPtr &goal) 
             break;
         }
 
-        if((ros::Time::now()-start_time).toSec()>10){
+        if((ros::Time::now()-start_time).toSec()>goal->timeout){
+            ROS_ERROR("Lookat timeout %d", goal->timeout);
             success = false;
         }
     }
     // publish the feedback
     lookAt_as->publishFeedback(feedback);
-    if (error < 0.01 && success) {
+    if (error < goal->tolerance && success) {
         ROS_INFO("MoveEndEffector: Succeeded");
         lookAt_as->setSucceeded(result, "done");
     } else {
@@ -336,10 +340,12 @@ void Roboy::moveEndEffector(const roboy_communication_control::MoveEndEffectorGo
     }
 
     nh.getParam("controller", casp->controller);
+    double timestep = 0.1;
     switch (casp->controller) {
         case 0:
             nh.getParam(casp->end_effektor_name + "/ForceControl/Kp", casp->Kp);
             nh.getParam(casp->end_effektor_name + "/ForceControl/Kd", casp->Kd);
+            timestep = 0.001;
             break;
         case 1:
             nh.getParam(casp->end_effektor_name + "/TorqueControl/Kp", casp->Kp);
@@ -348,6 +354,7 @@ void Roboy::moveEndEffector(const roboy_communication_control::MoveEndEffectorGo
         case 2:
             nh.getParam(casp->end_effektor_name + "/PositionControl/Kp", casp->Kp);
             nh.getParam(casp->end_effektor_name + "/PositionControl/Kd", casp->Kd);
+            timestep = 0.00001;
             break;
     }
 
@@ -359,7 +366,7 @@ void Roboy::moveEndEffector(const roboy_communication_control::MoveEndEffectorGo
     srv.request.pose.orientation.y = goal->pose.orientation.y;
     srv.request.pose.orientation.z = goal->pose.orientation.z;
     srv.request.pose.orientation.w = goal->pose.orientation.w;
-    while (error > 0.01 && success) {
+    while (error > goal->tolerance && success) {
         if (moveEndEffector_as->isPreemptRequested() || !ros::ok()) {
             ROS_INFO("LookAt: Preempted");
             // set the action state to preempted
@@ -388,7 +395,7 @@ void Roboy::moveEndEffector(const roboy_communication_control::MoveEndEffectorGo
                 }
             }
 
-            casp->update(0.00001);
+            casp->update(timestep);
             casp->updateController();
 
             error = (casp->q_target - casp->q).norm();
@@ -404,13 +411,14 @@ void Roboy::moveEndEffector(const roboy_communication_control::MoveEndEffectorGo
             feedback.error = error;
             moveEndEffector_as->publishFeedback(feedback);
         }
-        if((ros::Time::now()-start_time).toSec()>30){
+        if((ros::Time::now()-start_time).toSec()>goal->timeout){
+            ROS_ERROR("move endeffector timeout %d", goal->timeout);
             success = false;
         }
     }
     // publish the feedback
     moveEndEffector_as->publishFeedback(feedback);
-    if (error < 0.01 && success) {
+    if (error < goal->tolerance && success) {
         ROS_INFO("MoveEndEffector: Succeeded");
         moveEndEffector_as->setSucceeded(result, "done");
     } else {

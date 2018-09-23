@@ -2,7 +2,7 @@ number_of_fpgas: 3
 number_of_motors: 34
 controller: 2
 max_force: 10000
-min_force: 10
+min_force: 0
 qp_print_level: 0
 qp_working_sets: 1000
 log: 0
@@ -12,7 +12,7 @@ end_effectors:
 head:
   ForceControl:
     Kp: 1000
-    Kd: 10
+    Kd: 100
   TorqueControl:
     Kp: 1000
     Kd: 10
@@ -26,14 +26,13 @@ head:
   target_vel: [0,0,0,0]
   kinematic_chain: ["base","head"]
   joint_angle_mask: 0x1
-  control: 0
   fpga_id: 0
   number_of_motors: 4
 
 wrist_left_1:
   ForceControl:
     Kp: 1000
-    Kd: 10
+    Kd: 100
   TorqueControl:
     Kp: 1000
     Kd: 10
@@ -47,7 +46,6 @@ wrist_left_1:
   target_vel: [0,0,0,0,0,0]
   kinematic_chain: ["base","wrist_left_1"]
   joint_angle_mask: 0x40
-  control: 1
   fpga_id: 3
   number_of_motors: 9
 

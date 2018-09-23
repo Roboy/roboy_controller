@@ -63,7 +63,8 @@ def main():
                                            type=1,
                                            point=geometry_msgs.msg.Vector3(0,-2,0),
                                            root_frame='zed_camera_left_lense',
-                                           target_frame='cup_aruco_1'
+                                           target_frame='cup_aruco_1',
+                                           timeout=20, tolerance=0.3
                                        )))
 
         Sequence.add('LOOKFORCUP0',
@@ -75,7 +76,8 @@ def main():
                                                type=1,
                                                point=geometry_msgs.msg.Vector3(),
                                                root_frame='zed_camera_left_lense',
-                                               target_frame='cup_aruco_0'
+                                               target_frame='cup_aruco_0',
+                                               timeout=20, tolerance=0.3
                                            )))
         Sequence.add('MOVETOCUP0', SimpleActionState('/Roboy/MoveEndEffector',
                                                         roboy_communication_control.msg.MoveEndEffectorAction,
@@ -83,7 +85,8 @@ def main():
                                                             pose=pose,
                                                             endEffector='wrist_left_1',
                                                             type=1,
-                                                            target_frame='cup_aruco_0')))
+                                                            target_frame='cup_aruco_0',
+                                                        timeout=30)))
         Sequence.add('LOOKFORCUP1',
                      SimpleActionState('/Roboy/LookAt', roboy_communication_control.msg.LookAtAction,
                                        goal=roboy_communication_control.msg.LookAtGoal(
@@ -93,7 +96,8 @@ def main():
                                            type=1,
                                            point=geometry_msgs.msg.Vector3(),
                                            root_frame='zed_camera_left_lense',
-                                           target_frame='cup_aruco_1'
+                                           target_frame='cup_aruco_1',
+                                           timeout=30, tolerance=0.3
                                        )))
         Sequence.add('MOVETOCUP1', SimpleActionState('/Roboy/MoveEndEffector',
                                                      roboy_communication_control.msg.MoveEndEffectorAction,
@@ -101,7 +105,8 @@ def main():
                                                          pose=pose,
                                                          endEffector='wrist_left_1',
                                                          type=1,
-                                                         target_frame='cup_aruco_1')))
+                                                         target_frame='cup_aruco_1',
+                                                         timeout=30, tolerance=0.1)))
         Sequence.add('LOOKFORCUP2',
                      SimpleActionState('/Roboy/LookAt', roboy_communication_control.msg.LookAtAction,
                                        goal=roboy_communication_control.msg.LookAtGoal(
@@ -111,7 +116,8 @@ def main():
                                            type=1,
                                            point=geometry_msgs.msg.Vector3(),
                                            root_frame='zed_camera_left_lense',
-                                           target_frame='cup_aruco_2'
+                                           target_frame='cup_aruco_2',
+                                           timeout=30, tolerance=0.3
                                        )))
         Sequence.add('MOVETOCUP2', SimpleActionState('/Roboy/MoveEndEffector',
                                                      roboy_communication_control.msg.MoveEndEffectorAction,
@@ -119,7 +125,8 @@ def main():
                                                          pose=pose,
                                                          endEffector='wrist_left_1',
                                                          type=1,
-                                                         target_frame='cup_aruco_2')))
+                                                         target_frame='cup_aruco_2',
+                                                         timeout=30, tolerance=0.1)))
 
     # Attach a SMACH introspection server
     sis = IntrospectionServer('roboy_infineon_game', sq, '/INFINEON_GAME')
