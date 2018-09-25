@@ -1,4 +1,4 @@
-number_of_fpgas: 3
+number_of_fpgas: 5
 number_of_motors: 34
 controller: 2
 max_force: 10000
@@ -27,7 +27,7 @@ head:
   kinematic_chain: ["base","head"]
   joint_angle_mask: 0x1
   fpga_id: 0
-  number_of_motors: 4
+  number_of_motors: 6
 
 wrist_left_1:
   ForceControl:
@@ -47,7 +47,7 @@ wrist_left_1:
   kinematic_chain: ["base","wrist_left_1"]
   joint_angle_mask: 0x40
   fpga_id: 3
-  number_of_motors: 9
+  number_of_motors: 13
 
 wrist_right_1:
   ForceControl:

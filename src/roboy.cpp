@@ -79,7 +79,7 @@ Roboy::Roboy() {
 Roboy::~Roboy() {
 }
 
-void Roboy::sendToRealHardware(CASPRptr casp){
+void Roboy::sendToRealHardware(CASPRptr casp) {
     int number_of_motors = 0;
     nh.getParam(casp->end_effektor_name + "/number_of_motors", number_of_motors);
     roboy_communication_middleware::MotorCommand msg;
@@ -110,15 +110,16 @@ void Roboy::sendToRealHardware(CASPRptr casp){
                 msg.motors.push_back(motors[i]);
                 switch (motor_type[SHOULDER_LEFT][i]) {
                     case MYOMUSCLE500N:
-                        msg.setPoints.push_back(-myoMuscleEncoderTicksPerMeter((casp->motor_pos[i]- casp->displacement_real[i] * 2.0))); //
+                        msg.setPoints.push_back(-myoMuscleEncoderTicksPerMeter(
+                                (casp->motor_pos[i] - casp->displacement_real[i] * 2.0))); //
                         break;
                     case MYOBRICK100N:
                         msg.setPoints.push_back(-myoBrick100NEncoderTicksPerMeter(casp->motor_pos[i]
-                                                                                  + casp->displacement_real[i] * 2.0) );
+                                                                                  + casp->displacement_real[i] * 2.0));
                         break;
                     case MYOBRICK300N:
                         msg.setPoints.push_back(-myoBrick300NEncoderTicksPerMeter(casp->motor_pos[i]
-                                                                                  + casp->displacement_real[i] * 2.0) );
+                                                                                  + casp->displacement_real[i] * 2.0));
                         break;
 
                 }
@@ -151,8 +152,8 @@ void Roboy::main_loop() {
             if (info_counter > (caspr.size() - 1))
                 info_counter = 0;
             info_time_prev = ros::Time::now();
-            if(!moveEndEffector_as->isActive() && !lookAt_as->isActive()){
-                for(auto casp:caspr){
+            if (!moveEndEffector_as->isActive() && !lookAt_as->isActive()) {
+                for (auto casp:caspr) {
                     casp->update(0.00001);
                 }
             }
@@ -196,7 +197,16 @@ void Roboy::lookAt(const roboy_communication_control::LookAtGoalConstPtr &goal) 
     }
 
     Eigen::Affine3d root, target;
-    tf::transformTFToEigen(target_transform, target);
+    if (goal->type == 0) {
+        Vector3d t(goal->point.x, goal->point.y, goal->point.z);
+        target.setIdentity();
+        target.translate(t);
+    } else if (goal->type == 2) {
+        if (listener.waitForTransform("world", goal->target_frame.c_str(), ros::Time(0), ros::Duration(0.01))) {
+            listener.lookupTransform("world", goal->target_frame.c_str(), ros::Time(0), target_transform);
+            tf::transformTFToEigen(target_transform, target);
+        }
+    }
 
     double error = 10000;
     ros::Time last_feedback_time = ros::Time::now(), start_time = ros::Time::now();
@@ -220,6 +230,10 @@ void Roboy::lookAt(const roboy_communication_control::LookAtGoalConstPtr &goal) 
         Vector3d eye_ray(0, -1, 0), target_ray = (target.matrix().block(0, 3, 3, 1) - root.matrix().block(0, 3, 3, 1));
         target_ray.normalize();
         eye_ray = root.matrix().block(0, 0, 3, 3) * eye_ray;
+
+        Vector3d pos = root.matrix().block(0, 3, 3, 1);
+        publishRay(pos, eye_ray, "world", "eye_ray", 1111111, COLOR(1, 0, 0, 0.2), 0.1);
+        publishRay(pos, target_ray, "world", "target_ray", 1111112, COLOR(0, 1, 0, 0.2), 0.1);
 
         casp->q_target[goal->yaw_joint_index] = casp->q[goal->yaw_joint_index] - (target_ray[2] - eye_ray[2]);
         casp->q_target[goal->pitch_joint_index] = casp->q[goal->pitch_joint_index] + (target_ray[0] - eye_ray[0]);
@@ -256,7 +270,7 @@ void Roboy::lookAt(const roboy_communication_control::LookAtGoalConstPtr &goal) 
             break;
         }
 
-        if((ros::Time::now()-start_time).toSec()>goal->timeout){
+        if ((ros::Time::now() - start_time).toSec() > goal->timeout) {
             ROS_ERROR("Lookat timeout %d", goal->timeout);
             success = false;
         }
@@ -271,9 +285,7 @@ void Roboy::lookAt(const roboy_communication_control::LookAtGoalConstPtr &goal) 
         lookAt_as->setAborted(result, "failed");
     }
 
-//    Vector3d pos = root.matrix().block(0,3,3,1);
-//    publishRay(pos,eye_ray,"world","eye_ray",1111111,COLOR(1,0,0,1),0.1);
-//    publishRay(pos,target_ray,"world","eye_ray",1111112,COLOR(0,1,0,1),0.1);
+
 //
 //    ROS_INFO_STREAM_THROTTLE(1, "euler " << target_ray[2]-eye_ray[2] << " " << target_ray[0]-eye_ray[0]);
 }
@@ -297,7 +309,7 @@ void Roboy::moveEndEffector(const roboy_communication_control::MoveEndEffectorGo
     setControlMode(casp);
 
     Vector3d target_position;
-    switch (goal->type){
+    switch (goal->type) {
         case 0: {
             target_position[0] = goal->pose.position.x;
             target_position[1] = goal->pose.position.y;
@@ -326,17 +338,18 @@ void Roboy::moveEndEffector(const roboy_communication_control::MoveEndEffectorGo
             break;
         }
         case 2: {
-            if(goal->q_target.size()!=casp->number_of_dofs){
+            if (goal->q_target.size() != casp->number_of_dofs) {
                 ROS_ERROR("number of requested dofs does not match endeffector dofs");
                 success = false;
-            }else {
+            } else {
                 for (int i = 0; i < casp->number_of_dofs; i++) {
                     casp->q_target[i] = goal->q_target[i];
                 }
             }
             break;
         }
-        default: success = false;
+        default:
+            success = false;
     }
 
     nh.getParam("controller", casp->controller);
@@ -375,7 +388,7 @@ void Roboy::moveEndEffector(const roboy_communication_control::MoveEndEffectorGo
             break;
         }
 
-        if (!ik_solution_available && (goal->type==0 || goal->type==1)) {
+        if (!ik_solution_available && (goal->type == 0 || goal->type == 1)) {
             if (casp->InverseKinematicsService(srv.request, srv.response)) {
                 ik_solution_available = true;
                 for (int i = 0; i < casp->number_of_dofs; i++) {
@@ -386,7 +399,7 @@ void Roboy::moveEndEffector(const roboy_communication_control::MoveEndEffectorGo
             }
         }
 
-        if(ik_solution_available || goal->type==2){
+        if (ik_solution_available || goal->type == 2) {
             for (int i = 0; i < casp->number_of_dofs; i++) {
                 // if joint angle is masked and someone is controlling that joint angle, update it
                 if (((casp->joint_angle_mask >> i) & 0x1) == 1 && q[casp->joint_names[i]] != nullptr) {
@@ -411,7 +424,7 @@ void Roboy::moveEndEffector(const roboy_communication_control::MoveEndEffectorGo
             feedback.error = error;
             moveEndEffector_as->publishFeedback(feedback);
         }
-        if((ros::Time::now()-start_time).toSec()>goal->timeout){
+        if ((ros::Time::now() - start_time).toSec() > goal->timeout) {
             ROS_ERROR("move endeffector timeout %d", goal->timeout);
             success = false;
         }
@@ -437,12 +450,14 @@ bool Roboy::ResetService(std_srvs::Empty::Request &req,
     return true;
 }
 
-void Roboy::setControlMode(CASPRptr casp){
+void Roboy::setControlMode(CASPRptr casp) {
+    int number_of_motors = 0;
+    nh.getParam(casp->end_effektor_name + "/number_of_motors", number_of_motors);
     roboy_communication_middleware::MotorConfigService msg;
     msg.request.config.id = casp->id;
     for (int motor = 0; motor < NUMBER_OF_MOTORS_PER_FPGA; motor++) {
         msg.request.config.motors.push_back(motor);
-        if (motor < NUMBER_OF_MOTORS_MYOCONTROL_0) { // position control for myoControl 0
+        if (motor < number_of_motors) { // position control
             msg.request.config.control_mode.push_back(POSITION);
             msg.request.config.outputPosMax.push_back(1000);
             msg.request.config.outputNegMax.push_back(-1000);

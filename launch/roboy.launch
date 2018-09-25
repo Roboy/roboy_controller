@@ -5,46 +5,40 @@
     <arg name="gui" default="false"/>
     <arg name="headless" default="true"/>
     <arg name="debug" default="false"/>
-    <arg name="simulate" default="true"/>
+    <arg name="simulate" default="false"/>
     <arg name="xylophone" default="false"/>
     <arg name="cup_table" default="false"/>
+    <arg name="gazebo" default="false"/>
 
-    <include file="$(find gazebo_ros)/launch/empty_world.launch">
-        <arg name="debug" value="$(arg debug)"/>
-        <arg name="gui" value="$(arg gui)"/>
-        <arg name="paused" value="$(arg paused)"/>
-        <arg name="use_sim_time" value="$(arg use_sim_time)"/>
-        <arg name="headless" value="$(arg headless)"/>
-        <!--<arg name="world_name" value="roboy_xylophone.world"/>-->
-    </include>
+    <group if="$(arg gazebo)">
+        <include file="$(find gazebo_ros)/launch/empty_world.launch">
+            <arg name="debug" value="$(arg debug)"/>
+            <arg name="gui" value="$(arg gui)"/>
+            <arg name="paused" value="$(arg paused)"/>
+            <arg name="use_sim_time" value="$(arg use_sim_time)"/>
+            <arg name="headless" value="$(arg headless)"/>
+            <!--<arg name="world_name" value="roboy_xylophone.world"/>-->
+        </include>
 
-    <param name="planning_plugin" type="string" value="ompl_interface/OMPLPlanner"/>
-
-    <group if="$(arg xylophone)">
-        <node name="sdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
-              args="-sdf -file $(find roboy_models)/xylophone/model.sdf -model xylophone
+        <group if="$(arg xylophone)">
+            <node name="sdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
+                  args="-sdf -file $(find roboy_models)/xylophone/model.sdf -model xylophone
                               -x 0.1 -y -0.6 -z 0.15
                               -R 0.0 -P 0 -Y -3.07"
-        />
-    </group>
+            />
+        </group>
 
-    <group if="$(arg cup_table)">
-        <node name="sdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
-              args="-sdf -file $(find roboy_models)/cup_table/model.sdf -model cup_table
+        <group if="$(arg cup_table)">
+            <node name="sdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
+                  args="-sdf -file $(find roboy_models)/cup_table/model.sdf -model cup_table
                               -x 0.41 -y -0.5 -z 0.32
                               -R 0 -P 0 -Y 0.5"
-        />
-        <node name="roboy_state_estimator"
-              pkg="roboy_state_estimator"
-              type="roboy_state_estimator"
-              respawn="false"
-              output="screen"
-        />
-    </group>
+            />
+        </group>
 
-    <group if="$(arg simulate)">
-        <node name="sdf_spawner2" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
-              args="-sdf -file $(find roboy_models)/$(arg model_name)/model.sdf -model $(arg model_name)
+        <group if="$(arg simulate)">
+            <node name="sdf_spawner2" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
+                  args="-sdf -file $(find roboy_models)/$(arg model_name)/model.sdf -model $(arg model_name)
               -J hip_joint 0.2877185091848563
               -J sphere_axis0 0.29086141871888593
               -J sphere_axis1 0.8282385691186516
@@ -52,20 +46,11 @@
               -J elbow_left 1.209248215971815
               -J wrist_left 0.8629362373470855
         "
-        />
-        <!--<node name="sdf_spawner2" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"-->
-              <!--args="-sdf -file $(find roboy_models)/$(arg model_name)/model.sdf -model $(arg model_name)-->
-              <!-- -J hip_joint 0.2877185091848563-->
-              <!-- -J sphere_axis0 0.29086141871888593-->
-              <!-- -J sphere_axis1 0.8282385691186516-->
-              <!-- -J sphere_axis2 -0.757384650187231-->
-              <!-- -J elbow_left 1.209248215971815-->
-              <!-- -J wrist_left 0.8629362373470855-->
-        <!--"-->
-        <!--/>-->
+            />
+        </group>
     </group>
 
-    <node pkg="tf" type="static_transform_publisher" name="static_map" args="0 0 0 0 0 0 1  /world /map  100"/>
+    <node pkg="tf" type="static_transform_publisher" name="static_map" args="0 -0.12 0.045 0 0 -0.7071068 0.7071068  /head /map  100"/>
 
     <param name="robot_description_sdf" textfile="$(find roboy_models)/$(arg model_name)/model.sdf" />
     <param name="robot_description" textfile="$(find roboy_models)/$(arg model_name)/model.urdf" />
@@ -82,7 +67,12 @@
           args="$(arg model_name)"
     />
 
-
+    <node name="roboy_state_estimator"
+          pkg="roboy_state_estimator"
+          type="roboy_state_estimator"
+          respawn="false"
+          output="screen"
+    />
 </launch>
         <!--launch-prefix="gdb -ex run"-->
         <!--launch-prefix="gdb -ex run"-->
