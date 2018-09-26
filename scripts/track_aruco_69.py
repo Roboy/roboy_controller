@@ -51,8 +51,8 @@ def main():
                                                        yaw_joint_index=2,
                                                        pitch_joint_index=3,
                                                        point=point,
-                                                       type=1,
-                                                       sendToRealHardware=True,
+                                                       type=2,
+                                                       sendToRealHardware=False,
                                                        timeout=10, tolerance=0.01)))
         # Sequence.add('MOVEHOME2', SimpleActionState('/Roboy/MoveEndEffector',
         #                                             roboy_communication_control.msg.MoveEndEffectorAction,

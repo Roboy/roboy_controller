@@ -47,7 +47,7 @@ wrist_left_1:
   kinematic_chain: ["base","wrist_left_1"]
   joint_angle_mask: 0x40
   fpga_id: 3
-  number_of_motors: 13
+  number_of_motors: 9
 
 wrist_right_1:
   ForceControl:

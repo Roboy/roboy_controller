@@ -114,12 +114,12 @@ void Roboy::sendToRealHardware(CASPRptr casp) {
                                 (casp->motor_pos[i] - casp->displacement_real[i] * 2.0))); //
                         break;
                     case MYOBRICK100N:
-                        msg.setPoints.push_back(-myoBrick100NEncoderTicksPerMeter(casp->motor_pos[i]
-                                                                                  + casp->displacement_real[i] * 2.0));
+                        msg.setPoints.push_back(-myoBrick100NEncoderTicksPerMeter(casp->motor_pos[i]));
+                                                                                  //- casp->displacement_real[i] * 2.0));
                         break;
                     case MYOBRICK300N:
-                        msg.setPoints.push_back(-myoBrick300NEncoderTicksPerMeter(casp->motor_pos[i]
-                                                                                  + casp->displacement_real[i] * 2.0));
+                        msg.setPoints.push_back(-myoBrick300NEncoderTicksPerMeter(casp->motor_pos[i]));
+                                                                                  //- casp->displacement_real[i] * 2.0));
                         break;
 
                 }
@@ -172,7 +172,9 @@ void Roboy::lookAt(const roboy_communication_control::LookAtGoalConstPtr &goal) 
         return;
     }
 
-    setControlMode(casp);
+    if (goal->sendToRealHardware) {
+        setControlMode(casp);
+    }
 
     bool success = true;
     tf::StampedTransform root_transform, target_transform;
@@ -293,7 +295,7 @@ void Roboy::lookAt(const roboy_communication_control::LookAtGoalConstPtr &goal) 
 void Roboy::moveEndEffector(const roboy_communication_control::MoveEndEffectorGoalConstPtr &goal) {
     roboy_communication_control::MoveEndEffectorFeedback feedback;
     roboy_communication_control::MoveEndEffectorResult result;
-    bool success = true;
+    bool success = true, timeout = false;
 
     double error = 10000;
     ros::Time last_feedback_time = ros::Time::now(), start_time = ros::Time::now();
@@ -306,7 +308,9 @@ void Roboy::moveEndEffector(const roboy_communication_control::MoveEndEffectorGo
         return;
     }
 
-    setControlMode(casp);
+    if (goal->sendToRealHardware) {
+        setControlMode(casp);
+    }
 
     Vector3d target_position;
     switch (goal->type) {
@@ -379,13 +383,15 @@ void Roboy::moveEndEffector(const roboy_communication_control::MoveEndEffectorGo
     srv.request.pose.orientation.y = goal->pose.orientation.y;
     srv.request.pose.orientation.z = goal->pose.orientation.z;
     srv.request.pose.orientation.w = goal->pose.orientation.w;
-    while (error > goal->tolerance && success) {
+
+    publishSphere(target_position,"world","ik_target",696969,COLOR(0,1,0,1),0.05,goal->timeout);
+
+    while (error > goal->tolerance && success && !timeout) {
         if (moveEndEffector_as->isPreemptRequested() || !ros::ok()) {
             ROS_INFO("LookAt: Preempted");
             // set the action state to preempted
             moveEndEffector_as->setPreempted();
-            success = false;
-            break;
+            timeout = true;
         }
 
         if (!ik_solution_available && (goal->type == 0 || goal->type == 1)) {
@@ -413,9 +419,10 @@ void Roboy::moveEndEffector(const roboy_communication_control::MoveEndEffectorGo
 
             error = (casp->q_target - casp->q).norm();
 
-            if (goal->sendToRealHardware) {
-                sendToRealHardware(casp);
-            }
+        }
+
+        if (goal->sendToRealHardware) {
+            sendToRealHardware(casp);
         }
 
         if ((ros::Time::now() - last_feedback_time).toSec() > 1) {
@@ -431,7 +438,7 @@ void Roboy::moveEndEffector(const roboy_communication_control::MoveEndEffectorGo
     }
     // publish the feedback
     moveEndEffector_as->publishFeedback(feedback);
-    if (error < goal->tolerance && success) {
+    if (error < goal->tolerance && success && !timeout) {
         ROS_INFO("MoveEndEffector: Succeeded");
         moveEndEffector_as->setSucceeded(result, "done");
     } else {
@@ -471,20 +478,52 @@ void Roboy::setControlMode(CASPRptr casp) {
             msg.request.config.IntegralPosMax.push_back(0);
             msg.request.config.IntegralNegMax.push_back(0);
             msg.request.config.outputDivider.push_back(1);
-        } else {
+            switch (casp->id) {
+                case HEAD: {
+                        switch (motor_type[HEAD][motor]) {
+                            case MYOBRICK100N:
+                                msg.request.config.setpoint.push_back(-myoBrick100NEncoderTicksPerMeter(casp->motor_pos[motor]));
+                                break;
+                            case MYOBRICK300N:
+                                msg.request.config.setpoint.push_back(-myoBrick300NEncoderTicksPerMeter(casp->motor_pos[motor]));
+                                break;
+                        }
+                    break;
+                }
+                case SHOULDER_LEFT: {
+                    switch (motor_type[SHOULDER_LEFT][motor]) {
+                        case MYOMUSCLE500N:
+                            msg.request.config.setpoint.push_back(-myoMuscleEncoderTicksPerMeter(
+                                    (casp->motor_pos[motor] - casp->displacement_real[motor] * 2.0))); //
+                            break;
+                        case MYOBRICK100N:
+                            msg.request.config.setpoint.push_back(-myoBrick100NEncoderTicksPerMeter(casp->motor_pos[motor]));
+                            //- casp->displacement_real[i] * 2.0));
+                            break;
+                        case MYOBRICK300N:
+                            msg.request.config.setpoint.push_back(-myoBrick300NEncoderTicksPerMeter(casp->motor_pos[motor]));
+                            //- casp->displacement_real[i] * 2.0));
+                            break;
+
+                    }
+                    break;
+                }
+            }
+        }else {
             msg.request.config.control_mode.push_back(DISPLACEMENT);
             msg.request.config.outputPosMax.push_back(1000);
             msg.request.config.outputNegMax.push_back(-1000);
             msg.request.config.spPosMax.push_back(500);
             msg.request.config.spNegMax.push_back(0);
-            msg.request.config.Kp.push_back(100);
+            msg.request.config.Kp.push_back(30);
             msg.request.config.Ki.push_back(0);
             msg.request.config.Kd.push_back(0);
             msg.request.config.forwardGain.push_back(0);
             msg.request.config.deadBand.push_back(0);
             msg.request.config.IntegralPosMax.push_back(0);
             msg.request.config.IntegralNegMax.push_back(0);
-            msg.request.config.outputDivider.push_back(1);
+            msg.request.config.outputDivider.push_back(100);
+            msg.request.config.setpoint.push_back(0);
         }
     }
     if (motor_config_srv.call(msg)) {
