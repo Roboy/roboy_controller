@@ -19,12 +19,12 @@ top:
   PositionControl:
     Kp: 1000
     Kd: 0
-  target_frame: "cup_aruco_2"
+  target_frame: ""
   target_offset: [0,0,0]
   target_rotation: [0,0,0,1]
   target_pos: [0,0,0]
   target_vel: [0,0,0]
   kinematic_chain: ["base","top"]
   joint_angle_mask: 0x0
-  fpga_id: 0
+  fpga_id: 5
   number_of_motors: 8

@@ -1,6 +1,6 @@
 <launch>
     <arg name="model_name" default="roboy_xylophone"/>
-    <arg name="paused" default="false"/>
+    <arg name="paused" default="true"/>
     <arg name="use_sim_time" default="false"/>
     <arg name="gui" default="false"/>
     <arg name="headless" default="true"/>
@@ -39,12 +39,8 @@
         <group if="$(arg simulate)">
             <node name="sdf_spawner2" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
                   args="-sdf -file $(find roboy_models)/$(arg model_name)/model.sdf -model $(arg model_name)
-              -J hip_joint 0.2877185091848563
-              -J sphere_axis0 0.29086141871888593
-              -J sphere_axis1 0.8282385691186516
-              -J sphere_axis2 -0.757384650187231
-              -J elbow_left 1.209248215971815
-              -J wrist_left 0.8629362373470855
+              -J sphere_left_axis0 -1.5
+              -J sphere_right_axis0 -1.5
         "
             />
         </group>
@@ -55,6 +51,7 @@
     <param name="robot_description_sdf" textfile="$(find roboy_models)/$(arg model_name)/model.sdf" />
     <param name="robot_description" textfile="$(find roboy_models)/$(arg model_name)/model.urdf" />
     <param name="urdf_path" value="$(find roboy_models)/$(arg model_name)/model.urdf" />
+    <param name="simulate" value="$(arg simulate)" />
 
     <!-- Load the parameters to the parameter server from the yaml file-->
     <rosparam file="$(find roboy_controller)/config/$(arg model_name).yaml" command="load"/>
@@ -65,6 +62,7 @@
           respawn="false"
           output="screen"
           args="$(arg model_name)"
+          launch-prefix="gdb -ex run"
     />
 
     <node name="roboy_state_estimator"

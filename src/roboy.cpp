@@ -29,7 +29,6 @@ Roboy::Roboy() {
         vector<string> chain;
         nh.getParam(endeffector + "/kinematic_chain", chain);
         caspr.push_back(boost::shared_ptr<CASPR>(new CASPR(chain.front(), chain.back(), muscInfo)));
-        caspr.back()->simulate = true;
         casprByName[endeffector] = caspr.back();
         str << endeffector << endl;
     }
@@ -132,6 +131,10 @@ void Roboy::sendToRealHardware(CASPRptr casp) {
             casp->wrist_joint_pub.publish(msg2);
             break;
         }
+        case 5:{
+
+            break;
+        }
     }
 }
 
@@ -155,6 +158,7 @@ void Roboy::main_loop() {
             if (!moveEndEffector_as->isActive() && !lookAt_as->isActive()) {
                 for (auto casp:caspr) {
                     casp->update(0.00001);
+                    casp->updateController();
                 }
             }
         }
@@ -357,7 +361,7 @@ void Roboy::moveEndEffector(const roboy_communication_control::MoveEndEffectorGo
     }
 
     nh.getParam("controller", casp->controller);
-    double timestep = 0.1;
+    double timestep = 0.00001;
     switch (casp->controller) {
         case 0:
             nh.getParam(casp->end_effektor_name + "/ForceControl/Kp", casp->Kp);
@@ -367,6 +371,7 @@ void Roboy::moveEndEffector(const roboy_communication_control::MoveEndEffectorGo
         case 1:
             nh.getParam(casp->end_effektor_name + "/TorqueControl/Kp", casp->Kp);
             nh.getParam(casp->end_effektor_name + "/TorqueControl/Kd", casp->Kd);
+            timestep = 0.001;
             break;
         case 2:
             nh.getParam(casp->end_effektor_name + "/PositionControl/Kp", casp->Kp);
