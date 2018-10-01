@@ -13,7 +13,7 @@ import actionlib
 import random
 import std_srvs.srv, geometry_msgs.msg
 import roboy_communication_control.msg
-iterations = 100
+iterations = 1000
 iteration = 0
 sendtohardware = True
 rospy.init_node('msj_platform')
@@ -60,9 +60,9 @@ class randomPose(State):
         goal=roboy_communication_control.msg.MoveEndEffectorGoal(
             endEffector='top',
             type=2,
-            q_target=[random.uniform(-0.5, 0.5),random.uniform(-0.5, 0.5),random.uniform(-0.5, 0.5)],
+            q_target=[random.uniform(-0.5, 0.5),0,random.uniform(-0.5, 0.5)],
             sendToRealHardware=sendtohardware,
-            timeout=20, tolerance=0.01)
+            timeout=20, tolerance=0.05)
         moveEndeffector.send_goal(goal)
         iteration = iteration+1
         moveEndeffector.wait_for_result()
@@ -85,6 +85,73 @@ def main():
     rospy.loginfo("waiting for movement servers to become available")
     lookat.wait_for_server()
     moveEndeffector.wait_for_server()
+
+    # goal=roboy_communication_control.msg.MoveEndEffectorGoal(
+    #     endEffector='top',
+    #     type=2,
+    #     q_target=[0,0,0],
+    #     sendToRealHardware=sendtohardware,
+    #     timeout=10, tolerance=0.01)
+    # moveEndeffector.send_goal(goal)
+    # moveEndeffector.wait_for_result()
+    # goal=roboy_communication_control.msg.MoveEndEffectorGoal(
+    #     endEffector='top',
+    #     type=2,
+    #     q_target=[0.5,0,0],
+    #     sendToRealHardware=sendtohardware,
+    #     timeout=10, tolerance=0.01)
+    # moveEndeffector.send_goal(goal)
+    # moveEndeffector.wait_for_result()
+    # goal=roboy_communication_control.msg.MoveEndEffectorGoal(
+    #     endEffector='top',
+    #     type=2,
+    #     q_target=[-0.5,0,0],
+    #     sendToRealHardware=sendtohardware,
+    #     timeout=10, tolerance=0.01)
+    # moveEndeffector.send_goal(goal)
+    # moveEndeffector.wait_for_result()
+    # goal=roboy_communication_control.msg.MoveEndEffectorGoal(
+    #     endEffector='top',
+    #     type=2,
+    #     q_target=[0,0,0.5],
+    #     sendToRealHardware=sendtohardware,
+    #     timeout=10, tolerance=0.01)
+    # moveEndeffector.send_goal(goal)
+    # moveEndeffector.wait_for_result()
+    # goal=roboy_communication_control.msg.MoveEndEffectorGoal(
+    #     endEffector='top',
+    #     type=2,
+    #     q_target=[0,0,-0.5],
+    #     sendToRealHardware=sendtohardware,
+    #     timeout=10, tolerance=0.01)
+    # moveEndeffector.send_goal(goal)
+    # moveEndeffector.wait_for_result()
+    # goal=roboy_communication_control.msg.MoveEndEffectorGoal(
+    #     endEffector='top',
+    #     type=2,
+    #     q_target=[0,0.5,0],
+    #     sendToRealHardware=sendtohardware,
+    #     timeout=10, tolerance=0.01)
+    # moveEndeffector.send_goal(goal)
+    # moveEndeffector.wait_for_result()
+    # goal=roboy_communication_control.msg.MoveEndEffectorGoal(
+    #     endEffector='top',
+    #     type=2,
+    #     q_target=[0,-0.5,0],
+    #     sendToRealHardware=sendtohardware,
+    #     timeout=10, tolerance=0.01)
+    # moveEndeffector.send_goal(goal)
+    # moveEndeffector.wait_for_result()
+    # goal=roboy_communication_control.msg.MoveEndEffectorGoal(
+    #     endEffector='top',
+    #     type=2,
+    #     q_target=[0,0,0],
+    #     sendToRealHardware=sendtohardware,
+    #     timeout=10, tolerance=0.01)
+    # moveEndeffector.send_goal(goal)
+    # moveEndeffector.wait_for_result()
+
+
     rospy.loginfo("starting state machine now")
     # Create the top level SMACH state machine
     sm_top = smach.StateMachine(outcomes=['success'])

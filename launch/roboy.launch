@@ -62,7 +62,6 @@
           respawn="false"
           output="screen"
           args="$(arg model_name)"
-          launch-prefix="gdb -ex run"
     />
 
     <node name="roboy_state_estimator"
