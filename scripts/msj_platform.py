@@ -62,7 +62,7 @@ class randomPose(State):
             type=2,
             q_target=[random.uniform(-0.5, 0.5),0,random.uniform(-0.5, 0.5)],
             sendToRealHardware=sendtohardware,
-            timeout=20, tolerance=0.05)
+            timeout=20, tolerance=0.1)
         moveEndeffector.send_goal(goal)
         iteration = iteration+1
         moveEndeffector.wait_for_result()
