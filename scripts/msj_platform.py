@@ -60,9 +60,9 @@ class randomPose(State):
         goal=roboy_communication_control.msg.MoveEndEffectorGoal(
             endEffector='top',
             type=2,
-            q_target=[random.uniform(-0.5, 0.5),0,random.uniform(-0.5, 0.5)],
+            q_target=[random.uniform(-0.6, 0.6),random.uniform(-0.6, 0.6),random.uniform(-0.8, 0.8)],
             sendToRealHardware=sendtohardware,
-            timeout=20, tolerance=0.1)
+            timeout=10, tolerance=0.01)
         moveEndeffector.send_goal(goal)
         iteration = iteration+1
         moveEndeffector.wait_for_result()

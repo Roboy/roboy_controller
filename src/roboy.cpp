@@ -136,7 +136,7 @@ void Roboy::sendToRealHardware(CASPRptr casp) {
             msg.id = 5;
             for (int i = 0; i < number_of_motors; i++) {
                 msg.motors.push_back(i);
-                msg.setPoints.push_back(512+(casp->motor_pos[i]/(2.0*M_PI*0.015*(300.0/1024.0/360.0)))); //
+                msg.setPoints.push_back(512+(casp->motor_pos[i]/(2.0*M_PI*0.016*(301.0/1024.0/360.0)))); //
             }
             casp->motorcommand_pub.publish(msg);
             break;
@@ -382,7 +382,7 @@ void Roboy::moveEndEffector(const roboy_communication_control::MoveEndEffectorGo
         case 2:
             nh.getParam(casp->end_effektor_name + "/PositionControl/Kp", casp->Kp);
             nh.getParam(casp->end_effektor_name + "/PositionControl/Kd", casp->Kd);
-            timestep = 0.00001;
+            timestep = 0.000001;
             break;
     }
 
