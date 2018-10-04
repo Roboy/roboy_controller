@@ -1,0 +1,73 @@
+number_of_fpgas: 1
+number_of_motors: 16
+controller: 1
+max_force: 10000
+min_force: 10
+qp_print_level: 0
+qp_working_sets: 1000
+log: 0
+end_effectors:
+  ["finger0_link2"]
+
+finger0_link2:
+  ForceControl:
+      Kp: 100
+      Kd: 10
+  TorqueControl:
+    Kp: 100
+    Kd: 10
+  PositionControl:
+    Kp: 10
+    Kd: 0
+  target_frame: "cup_aruco_2"
+  target_offset: [0,0,0]
+  target_rotation: [0,0,0,1]
+  target_pos: [0,0,0,0,0,0]
+  target_vel: [0,0,0,0,0,0]
+  kinematic_chain: ["base","finger0_link2"]
+  joint_angle_mask: 0x0
+  control: 0
+  fpga_id: 0
+  number_of_motors: 6
+
+finger1_link2:
+  ForceControl:
+      Kp: 100
+      Kd: 10
+  TorqueControl:
+    Kp: 100
+    Kd: 10
+  PositionControl:
+    Kp: 10
+    Kd: 0
+  target_frame: "cup_aruco_2"
+  target_offset: [0,0,0]
+  target_rotation: [0,0,0,1]
+  target_pos: [0,0,0,0,0,0]
+  target_vel: [0,0,0,0,0,0]
+  kinematic_chain: ["base","finger1_link2"]
+  joint_angle_mask: 0x0
+  control: 0
+  fpga_id: 0
+  number_of_motors: 6
+
+finger2_link2:
+  ForceControl:
+      Kp: 100
+      Kd: 10
+  TorqueControl:
+    Kp: 100
+    Kd: 10
+  PositionControl:
+    Kp: 10
+    Kd: 0
+  target_frame: "cup_aruco_2"
+  target_offset: [0,0,0]
+  target_rotation: [0,0,0,1]
+  target_pos: [0,0,0,0,0,0]
+  target_vel: [0,0,0,0,0,0]
+  kinematic_chain: ["base","finger2_link2"]
+  joint_angle_mask: 0x0
+  control: 0
+  fpga_id: 0
+  number_of_motors: 6

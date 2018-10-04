@@ -13,7 +13,7 @@ import actionlib
 import random
 import std_srvs.srv, geometry_msgs.msg
 import roboy_communication_control.msg
-iterations = 1000
+iterations = 100000
 iteration = 0
 sendtohardware = True
 rospy.init_node('msj_platform')
@@ -62,7 +62,7 @@ class randomPose(State):
             type=2,
             q_target=[random.uniform(-0.6, 0.6),random.uniform(-0.6, 0.6),random.uniform(-0.8, 0.8)],
             sendToRealHardware=sendtohardware,
-            timeout=10, tolerance=0.01)
+            timeout=3, tolerance=0.01)
         moveEndeffector.send_goal(goal)
         iteration = iteration+1
         moveEndeffector.wait_for_result()

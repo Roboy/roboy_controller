@@ -17,7 +17,7 @@ top:
     Kp: 1000
     Kd: 10
   PositionControl:
-    Kp: 1000
+    Kp: 10000
     Kd: 0
   target_frame: ""
   target_offset: [0,0,0]
