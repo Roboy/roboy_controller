@@ -56,7 +56,7 @@ private:
 
     ros::NodeHandle nh;
     boost::shared_ptr<actionlib::SimpleActionServer<roboy_communication_control::LookAtAction>> lookAt_as;
-    boost::shared_ptr<actionlib::SimpleActionServer<roboy_communication_control::MoveEndEffectorAction>> moveEndEffector_as;
+    map<CASPRptr,boost::shared_ptr<actionlib::SimpleActionServer<roboy_communication_control::MoveEndEffectorAction>>> moveEndEffector_as;
     ros::ServiceServer reset_srv;
     ros::ServiceClient motor_config_srv;
     ros::Time prev_time;

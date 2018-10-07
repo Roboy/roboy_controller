@@ -1,6 +1,6 @@
 number_of_fpgas: 5
 number_of_motors: 34
-controller: 1
+controller: 2
 max_force: 10000
 min_force: 0
 qp_print_level: 0
@@ -57,7 +57,7 @@ wrist_right_1:
     Kp: 100
     Kd: 10
   PositionControl:
-    Kp: 100
+    Kp: 1000
     Kd: 0
   target_frame: "cup_aruco_2"
   target_offset: [0,0,0]
