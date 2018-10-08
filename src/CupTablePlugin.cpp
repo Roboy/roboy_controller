@@ -53,7 +53,7 @@ public:
         boost::shared_ptr<ros::AsyncSpinner> spinner = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(2));
         spinner->start();
 
-//        left_zed_camera_sub = nh->subscribe("/zed/camera/left/image_raw_color", 1, &CupTablePlugin::leftCameraCB, this);
+        left_zed_camera_sub = nh->subscribe("/zed/camera/left/image_raw_color", 1, &CupTablePlugin::leftCameraCB, this);
 //        right_zed_camera_sub = nh->subscribe("/zed/camera/right/image_raw_color", 1, &CupTablePlugin::rightCameraCB, this);
 
         this->updateConnection = event::Events::ConnectWorldUpdateBegin(
@@ -99,7 +99,7 @@ public:
 
 public:
     void OnUpdate(const common::UpdateInfo & /*_info*/) {
-        if ((ros::Time::now() - last_published).toSec() < 0.033)
+        if ((ros::Time::now() - last_published).toSec() < 0.1)
             return;
         last_published = ros::Time::now();
         int message_counter = 1000;
@@ -170,10 +170,10 @@ public:
                         tf::StampedTransform(trans, ros::Time::now(), "world", link->GetName().c_str()));
             }
         }
-//        if (zed_right_ptr != nullptr && zed_left_ptr != nullptr) {
-//            detectAruco();
-//            cv::waitKey(1);
-//        }
+        if (zed_left_ptr != nullptr) {
+            detectAruco();
+            cv::waitKey(1);
+        }
     }
 
     void detectAruco() {
@@ -205,48 +205,48 @@ public:
                     pos = q_cv_coordinates_to_gazebo.matrix()*pos;
                     trans.setOrigin(tf::Vector3(pos[0],-pos[1],pos[2]));
                     char str[100];
-                    sprintf(str, "cup_zed_left_%d", ids[i]);
+                    sprintf(str, "zed_left_aruco_%d", ids[i]);
                     tf_broadcaster.sendTransform(
                             tf::StampedTransform(trans, ros::Time::now(), "zed_camera_left_lense", str));
                 }
             }
             cv::imshow(ZED_LEFT, zed_left_ptr->image);
         }
-        {
-            vector<int> ids;
-            vector<vector<Point2f> > corners, rejected;
-            vector<Vec3d> rvecs, tvecs;
-
-            // detect markers and estimate pose
-            aruco::detectMarkers(zed_right_ptr->image, dictionary, corners, ids, detectorParams, rejected);
-            aruco::estimatePoseSingleMarkers(corners, markerLength, camMatrix, distCoeffs, rvecs, tvecs);
-            // draw results
-            if (ids.size() > 0) {
-                aruco::drawDetectedMarkers(zed_right_ptr->image, corners, ids);
-                for (unsigned int i = 0; i < ids.size(); i++) {
-                    if (!arucoIDs.empty()) {
-                        if (std::find(arucoIDs.begin(), arucoIDs.end(), ids[i]) == arucoIDs.end())
-                            continue;
-                    }
-                    aruco::drawAxis(zed_right_ptr->image, camMatrix, distCoeffs, rvecs[i], tvecs[i],
-                                    markerLength * 0.5f);
-//                    double theta = sqrt(pow(rvecs[i][0], 2.0) + pow(rvecs[i][1], 2.0) + pow(rvecs[i][2], 2.0));
-//                    Quaterniond q(rvecs[i][0] / theta, rvecs[i][1] / theta, rvecs[i][2] / theta, theta);
-//                    q.normalize();
-                    tf::Transform trans;
-                    trans.setRotation(tf::Quaternion(0,0,0,1));
-                    Quaterniond q_cv_coordinates_to_gazebo(0, 0, 0.7071068, 0.7071068);
-                    Vector3d pos(tvecs[i][0], tvecs[i][1],tvecs[i][2]);
-                    pos = q_cv_coordinates_to_gazebo.matrix()*pos;
-                    trans.setOrigin(tf::Vector3(pos[0],-pos[1],pos[2]));
-                    char str[100];
-                    sprintf(str, "cup_zed_right_%d", ids[i]);
-                    tf_broadcaster.sendTransform(
-                            tf::StampedTransform(trans, ros::Time::now(), "zed_camera_right_lense", str));
-                }
-            }
-            cv::imshow(ZED_RIGHT, zed_right_ptr->image);
-        }
+//        {
+//            vector<int> ids;
+//            vector<vector<Point2f> > corners, rejected;
+//            vector<Vec3d> rvecs, tvecs;
+//
+//            // detect markers and estimate pose
+//            aruco::detectMarkers(zed_right_ptr->image, dictionary, corners, ids, detectorParams, rejected);
+//            aruco::estimatePoseSingleMarkers(corners, markerLength, camMatrix, distCoeffs, rvecs, tvecs);
+//            // draw results
+//            if (ids.size() > 0) {
+//                aruco::drawDetectedMarkers(zed_right_ptr->image, corners, ids);
+//                for (unsigned int i = 0; i < ids.size(); i++) {
+//                    if (!arucoIDs.empty()) {
+//                        if (std::find(arucoIDs.begin(), arucoIDs.end(), ids[i]) == arucoIDs.end())
+//                            continue;
+//                    }
+//                    aruco::drawAxis(zed_right_ptr->image, camMatrix, distCoeffs, rvecs[i], tvecs[i],
+//                                    markerLength * 0.5f);
+////                    double theta = sqrt(pow(rvecs[i][0], 2.0) + pow(rvecs[i][1], 2.0) + pow(rvecs[i][2], 2.0));
+////                    Quaterniond q(rvecs[i][0] / theta, rvecs[i][1] / theta, rvecs[i][2] / theta, theta);
+////                    q.normalize();
+//                    tf::Transform trans;
+//                    trans.setRotation(tf::Quaternion(0,0,0,1));
+//                    Quaterniond q_cv_coordinates_to_gazebo(0, 0, 0.7071068, 0.7071068);
+//                    Vector3d pos(tvecs[i][0], tvecs[i][1],tvecs[i][2]);
+//                    pos = q_cv_coordinates_to_gazebo.matrix()*pos;
+//                    trans.setOrigin(tf::Vector3(pos[0],-pos[1],pos[2]));
+//                    char str[100];
+//                    sprintf(str, "cup_zed_right_%d", ids[i]);
+//                    tf_broadcaster.sendTransform(
+//                            tf::StampedTransform(trans, ros::Time::now(), "zed_camera_right_lense", str));
+//                }
+//            }
+//            cv::imshow(ZED_RIGHT, zed_right_ptr->image);
+//        }
     }
 
 private:
