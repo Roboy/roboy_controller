@@ -353,7 +353,7 @@ void Roboy::moveEndEffector(const roboy_communication_control::MoveEndEffectorGo
         return;
     }
 
-    moveEndEffector_as[casp]->acceptNewGoal();
+//    moveEndEffector_as[casp]->acceptNewGoal();
 
     if (goal->sendToRealHardware) {
         setControlMode(casp);
