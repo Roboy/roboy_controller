@@ -61,8 +61,17 @@ Roboy::Roboy() {
     fmt = Eigen::IOFormat(4, 0, " ", ";\n", "", "", "[", "]");
 
     reset_srv = nh.advertiseService("/CASPR/reset", &Roboy::ResetService, this);
+    init_srv = nh.advertiseService("/CASPR/init", &Roboy::InitService, this);
     motor_config_srv = nh.serviceClient<roboy_communication_middleware::MotorConfigService>(
             "/roboy/shoulder_left/middleware/MotorConfig");
+    elbow_controller_left_srv = nh.serviceClient<std_srvs::SetBool>(
+            "/roboy/middleware/elbow_left/JointController");
+    wrist_controller_left_srv = nh.serviceClient<std_srvs::SetBool>(
+            "/roboy/middleware/wrist_left/JointController");
+    elbow_controller_right_srv = nh.serviceClient<std_srvs::SetBool>(
+            "/roboy/middleware/elbow_right/JointController");
+    wrist_controller_right_srv = nh.serviceClient<std_srvs::SetBool>(
+            "/roboy/middleware/wrist_right/JointController");
     clearAll();
 
     lookAt_as.reset(new actionlib::SimpleActionServer<roboy_communication_control::LookAtAction>(nh, "Roboy/LookAt",
@@ -357,6 +366,23 @@ void Roboy::moveEndEffector(const roboy_communication_control::MoveEndEffectorGo
 
     if (goal->sendToRealHardware) {
         setControlMode(casp);
+        std_srvs::SetBool msg;
+        msg.request.data = true;
+        if(casp->id==SHOULDER_LEFT){
+            if(!elbow_controller_left_srv.call(msg)){
+                ROS_WARN("could not enable elbow joint controller for left arm");
+            }
+            if(!wrist_controller_left_srv.call(msg)){
+                ROS_WARN("could not enable wrist joint controller for left arm");
+            }
+        }else if(casp->id==SHOULDER_RIGHT){
+            if(!elbow_controller_right_srv.call(msg)){
+                ROS_WARN("could not enable elbow joint controller for right arm");
+            }
+            if(!wrist_controller_right_srv.call(msg)){
+                ROS_WARN("could not enable wrist joint controller for right arm");
+            }
+        }
     }
 
     Vector3d target_position;
@@ -491,14 +517,46 @@ void Roboy::moveEndEffector(const roboy_communication_control::MoveEndEffectorGo
         moveEndEffector_as[casp]->setAborted(result, "failed");
     }
 
+    if (goal->sendToRealHardware) {
+        std_srvs::SetBool msg;
+        msg.request.data = false;
+        if(casp->id==SHOULDER_LEFT){
+            if(!elbow_controller_left_srv.call(msg)){
+                ROS_WARN("could not disable elbow joint controller for left arm");
+            }
+            if(!wrist_controller_left_srv.call(msg)){
+                ROS_WARN("could not disable wrist joint controller for left arm");
+            }
+        }else if(casp->id==SHOULDER_RIGHT){
+            if(!elbow_controller_right_srv.call(msg)){
+                ROS_WARN("could not disable elbow joint controller for right arm");
+            }
+            if(!wrist_controller_right_srv.call(msg)){
+                ROS_WARN("could not disable wrist joint controller for right arm");
+            }
+        }
+    }
 
 }
 
-bool Roboy::ResetService(std_srvs::Empty::Request &req,
-                         std_srvs::Empty::Response &res) {
+bool Roboy::ResetService(std_srvs::Trigger::Request &req,
+                         std_srvs::Trigger::Response &res) {
     for (auto casp:caspr) {
-        casp->motor_pos_real_offset = casp->motor_pos;
         casp->init();
+    }
+    return true;
+}
+
+bool Roboy::InitService(std_srvs::Trigger::Request &req,
+                 std_srvs::Trigger::Response &res){
+    for (auto casp:caspr) {
+        casp->motor_pos_real_offset = casp->motor_pos_real;
+        stringstream str;
+        str << casp->end_effektor_name << " motor offsets: \n";
+        for(int i=0;i<casp->motor_pos_real_offset.size();i++){
+            str << "\t" << i << ": " << casp->motor_pos_real_offset[i] << endl;
+        }
+        ROS_INFO_STREAM(str.str());
     }
     return true;
 }
@@ -576,7 +634,7 @@ void Roboy::setControlMode(CASPRptr casp) {
             msg.request.config.setpoint.push_back(0);
         }
     }
-    if (motor_config_srv.call(msg)) {
+    if (!motor_config_srv.call(msg)) {
         ROS_WARN("could not change motor config");
     }
 }

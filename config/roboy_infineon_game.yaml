@@ -7,7 +7,7 @@ qp_print_level: 0
 qp_working_sets: 1000
 log: 0
 end_effectors:
-  ["head","wrist_left_1","wrist_right_1"]
+  ["head","wrist_left_1"]
 
 head:
   ForceControl:
@@ -37,7 +37,7 @@ wrist_left_1:
     Kp: 1000
     Kd: 10
   PositionControl:
-    Kp: 1000
+    Kp: 10000
     Kd: 0
   target_frame: "cup_aruco_2"
   target_offset: [0,0.05,0.1]
@@ -57,7 +57,7 @@ wrist_right_1:
     Kp: 100
     Kd: 10
   PositionControl:
-    Kp: 1000
+    Kp: 10000
     Kd: 0
   target_frame: "cup_aruco_2"
   target_offset: [0,0,0]

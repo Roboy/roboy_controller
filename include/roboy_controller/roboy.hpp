@@ -3,7 +3,8 @@
 #include <ros/ros.h>
 #include <ros/callback_queue.h>
 #include <actionlib/server/simple_action_server.h>
-#include <std_srvs/Empty.h>
+#include <std_srvs/Trigger.h>
+#include <std_srvs/SetBool.h>
 #include <roboy_simulation/CASPR.hpp>
 #include <common_utilities/CommonDefinitions.h>
 #include <common_utilities/rviz_visualization.hpp>
@@ -49,16 +50,19 @@ private:
     void lookAt(const roboy_communication_control::LookAtGoalConstPtr &goal);
     void moveEndEffector(const roboy_communication_control::MoveEndEffectorGoalConstPtr &goal);
 
-    bool ResetService(std_srvs::Empty::Request &req,
-                      std_srvs::Empty::Response &res);
+    bool ResetService(std_srvs::Trigger::Request &req,
+                      std_srvs::Trigger::Response &res);
+
+    bool InitService(std_srvs::Trigger::Request &req,
+                      std_srvs::Trigger::Response &res);
 
     void setControlMode(CASPRptr casp);
 
     ros::NodeHandle nh;
     boost::shared_ptr<actionlib::SimpleActionServer<roboy_communication_control::LookAtAction>> lookAt_as;
     map<CASPRptr,boost::shared_ptr<actionlib::SimpleActionServer<roboy_communication_control::MoveEndEffectorAction>>> moveEndEffector_as;
-    ros::ServiceServer reset_srv;
-    ros::ServiceClient motor_config_srv;
+    ros::ServiceServer reset_srv, init_srv;
+    ros::ServiceClient motor_config_srv, elbow_controller_left_srv, elbow_controller_right_srv, wrist_controller_left_srv, wrist_controller_right_srv;
     ros::Time prev_time;
     boost::shared_ptr<ros::AsyncSpinner> spinner;
     map<string,double> Kp, Kd;
