@@ -376,12 +376,12 @@ void Roboy::moveEndEffector(const roboy_communication_control::MoveEndEffectorGo
                 ROS_WARN("could not enable wrist joint controller for left arm");
             }
         }else if(casp->id==SHOULDER_RIGHT){
-            if(!elbow_controller_right_srv.call(msg)){
-                ROS_WARN("could not enable elbow joint controller for right arm");
-            }
-            if(!wrist_controller_right_srv.call(msg)){
-                ROS_WARN("could not enable wrist joint controller for right arm");
-            }
+//            if(!elbow_controller_right_srv.call(msg)){
+//                ROS_WARN("could not enable elbow joint controller for right arm");
+//            }
+//            if(!wrist_controller_right_srv.call(msg)){
+//                ROS_WARN("could not enable wrist joint controller for right arm");
+//            }
         }
     }
 
@@ -528,12 +528,12 @@ void Roboy::moveEndEffector(const roboy_communication_control::MoveEndEffectorGo
                 ROS_WARN("could not disable wrist joint controller for left arm");
             }
         }else if(casp->id==SHOULDER_RIGHT){
-            if(!elbow_controller_right_srv.call(msg)){
-                ROS_WARN("could not disable elbow joint controller for right arm");
-            }
-            if(!wrist_controller_right_srv.call(msg)){
-                ROS_WARN("could not disable wrist joint controller for right arm");
-            }
+//            if(!elbow_controller_right_srv.call(msg)){
+//                ROS_WARN("could not disable elbow joint controller for right arm");
+//            }
+//            if(!wrist_controller_right_srv.call(msg)){
+//                ROS_WARN("could not disable wrist joint controller for right arm");
+//            }
         }
     }
 
