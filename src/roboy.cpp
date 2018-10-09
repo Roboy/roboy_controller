@@ -98,11 +98,15 @@ void Roboy::sendToRealHardware(CASPRptr casp) {
                 switch (motor_type[HEAD][i]) {
                     case MYOBRICK100N:
                         msg.setPoints.push_back(
-                                -myoBrick100NEncoderTicksPerMeter(casp->motor_pos[i] + casp->motor_pos_real_offset[i]));
+                                -myoBrick100NEncoderTicksPerMeter(casp->motor_pos[i]
+                                                                  - casp->displacement_real[i]
+                                                                  + casp->motor_pos_real_offset[i]));
                         break;
                     case MYOBRICK300N:
                         msg.setPoints.push_back(
-                                -myoBrick300NEncoderTicksPerMeter(casp->motor_pos[i] + casp->motor_pos_real_offset[i]));
+                                -myoBrick300NEncoderTicksPerMeter(casp->motor_pos[i]
+                                                                  - casp->displacement_real[i]
+                                                                  + casp->motor_pos_real_offset[i]));
                         break;
 
                 }
@@ -124,13 +128,15 @@ void Roboy::sendToRealHardware(CASPRptr casp) {
                         break;
                     case MYOBRICK100N:
                         msg.setPoints.push_back(
-                                -myoBrick100NEncoderTicksPerMeter(casp->motor_pos[i] + casp->motor_pos_real_offset[i]));
-                        //- casp->displacement_real[i] * 2.0));
+                                -myoBrick100NEncoderTicksPerMeter(casp->motor_pos[i]
+                                                                  - casp->displacement_real[i]
+                                                                  + casp->motor_pos_real_offset[i]));
                         break;
                     case MYOBRICK300N:
                         msg.setPoints.push_back(
-                                -myoBrick300NEncoderTicksPerMeter(casp->motor_pos[i] + casp->motor_pos_real_offset[i]));
-                        //- casp->displacement_real[i] * 2.0));
+                                -myoBrick300NEncoderTicksPerMeter(casp->motor_pos[i]
+                                                                  - casp->displacement_real[i]
+                                                                  + casp->motor_pos_real_offset[i]));
                         break;
 
                 }
@@ -156,13 +162,15 @@ void Roboy::sendToRealHardware(CASPRptr casp) {
                         break;
                     case MYOBRICK100N:
                         msg.setPoints.push_back(
-                                -myoBrick100NEncoderTicksPerMeter(casp->motor_pos[i] + casp->motor_pos_real_offset[i]));
-                        //- casp->displacement_real[i] * 2.0));
+                                -myoBrick100NEncoderTicksPerMeter(casp->motor_pos[i]
+                                                                  - casp->displacement_real[i]
+                                                                  + casp->motor_pos_real_offset[i]));
                         break;
                     case MYOBRICK300N:
                         msg.setPoints.push_back(
-                                -myoBrick300NEncoderTicksPerMeter(casp->motor_pos[i] + casp->motor_pos_real_offset[i]));
-                        //- casp->displacement_real[i] * 2.0));
+                                -myoBrick300NEncoderTicksPerMeter(casp->motor_pos[i]
+                                                                  - casp->displacement_real[i]
+                                                                  + casp->motor_pos_real_offset[i]));
                         break;
 
                 }
