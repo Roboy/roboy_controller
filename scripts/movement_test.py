@@ -31,20 +31,20 @@ def main():
     pose.orientation.w = -0.49285
     # Open the container
     with sq:
-        Sequence.add('MOVEHOME', SimpleActionState('/Roboy/MoveEndEffector/wrist_left_1',
-                                                   roboy_communication_control.msg.MoveEndEffectorAction,
-                                                   goal=roboy_communication_control.msg.MoveEndEffectorGoal(
-                                                       endEffector='wrist_left_1',
-                                                       type=2,
-                                                       q_target=[0, 0, 0, 0, 0, 0, 0], sendToRealHardware=True,
-                                                       timeout=30, tolerance=0.001)))
-        # Sequence.add('MOVEUP', SimpleActionState('/Roboy/MoveEndEffector',
-        #                                          roboy_communication_control.msg.MoveEndEffectorAction,
-        #                                          goal=roboy_communication_control.msg.MoveEndEffectorGoal(
-        #                                              endEffector='wrist_left_1',
-        #                                              type=2,
-        #                                              q_target=[0, -1.5, 0, 0, 0, 0, 0], sendToRealHardware=True,
-        #                                              timeout=10, tolerance=0.1)))
+        # Sequence.add('MOVEHOME', SimpleActionState('/Roboy/MoveEndEffector/wrist_left_1',
+        #                                            roboy_communication_control.msg.MoveEndEffectorAction,
+        #                                            goal=roboy_communication_control.msg.MoveEndEffectorGoal(
+        #                                                endEffector='wrist_left_1',
+        #                                                type=2,
+        #                                                q_target=[0, 0, 0, 0, 0, 0, 0], sendToRealHardware=True,
+        #                                                timeout=30, tolerance=0.001)))
+        Sequence.add('MOVEUP', SimpleActionState('/Roboy/MoveEndEffector/wrist_left_1',
+                                                 roboy_communication_control.msg.MoveEndEffectorAction,
+                                                 goal=roboy_communication_control.msg.MoveEndEffectorGoal(
+                                                     endEffector='wrist_left_1',
+                                                     type=2,
+                                                     q_target=[0, 0, 0, 0, 0, 0, 0], sendToRealHardware=True,
+                                                     timeout=10, tolerance=0.1)))
         # Sequence.add('MOVEFRONT', SimpleActionState('/Roboy/MoveEndEffector',
         #                                          roboy_communication_control.msg.MoveEndEffectorAction,
         #                                          goal=roboy_communication_control.msg.Move    EndEffectorGoal(

@@ -127,20 +127,20 @@ void Roboy::sendToRealHardware(CASPRptr casp) {
                 switch (motor_type[SHOULDER_LEFT][i]) {
                     case MYOMUSCLE500N:
                         msg.setPoints.push_back(-myoMuscleEncoderTicksPerMeter(
-                                (casp->motor_pos[i] - casp->displacement_real[i] * 2.0 +
+                                (casp->motor_pos[i] - casp->displacement_real[i] * 2.0 -
                                  casp->motor_pos_real_offset[i]))); //
                         break;
                     case MYOBRICK100N:
                         msg.setPoints.push_back(
                                 -myoBrick100NEncoderTicksPerMeter(casp->motor_pos[i]
                                                                   - casp->displacement_real[i]
-                                                                  + casp->motor_pos_real_offset[i]));
+                                                                  - casp->motor_pos_real_offset[i]));
                         break;
                     case MYOBRICK300N:
                         msg.setPoints.push_back(
                                 -myoBrick300NEncoderTicksPerMeter(casp->motor_pos[i]
                                                                   - casp->displacement_real[i]
-                                                                  + casp->motor_pos_real_offset[i]));
+                                                                  - casp->motor_pos_real_offset[i]));
                         break;
 
                 }
@@ -168,13 +168,13 @@ void Roboy::sendToRealHardware(CASPRptr casp) {
                         msg.setPoints.push_back(
                                 -myoBrick100NEncoderTicksPerMeter(casp->motor_pos[i]
                                                                   - casp->displacement_real[i]
-                                                                  + casp->motor_pos_real_offset[i]));
+                                                                  - casp->motor_pos_real_offset[i]));
                         break;
                     case MYOBRICK300N:
                         msg.setPoints.push_back(
                                 -myoBrick300NEncoderTicksPerMeter(casp->motor_pos[i]
                                                                   - casp->displacement_real[i]
-                                                                  + casp->motor_pos_real_offset[i]));
+                                                                  - casp->motor_pos_real_offset[i]));
                         break;
 
                 }
@@ -379,18 +379,18 @@ void Roboy::moveEndEffector(const roboy_communication_control::MoveEndEffectorGo
     if (goal->sendToRealHardware) {
         if(casp->id==SHOULDER_LEFT){
             setControlMode(casp);
-            std_srvs::SetBool msg;
-            msg.request.data = true;
-            if(!elbow_controller_left_srv.call(msg)){
-                ROS_WARN("could not enable elbow joint controller for left arm");
-            }
-            if(!wrist_controller_left_srv.call(msg)){
-                ROS_WARN("could not enable wrist joint controller for left arm");
-            }
+//            std_srvs::SetBool msg;
+//            msg.request.data = true;
+//            if(!elbow_controller_left_srv.call(msg)){
+//                ROS_ERROR("could not enable elbow joint controller for left arm");
+//            }
+//            if(!wrist_controller_left_srv.call(msg)){
+//                ROS_ERROR("could not enable wrist joint controller for left arm");
+//            }
         }else if(casp->id==SHOULDER_RIGHT){
-            setControlMode(casp);
-            std_srvs::SetBool msg;
-            msg.request.data = true;
+//            setControlMode(casp);
+//            std_srvs::SetBool msg;
+//            msg.request.data = true;
 //            if(!elbow_controller_right_srv.call(msg)){
 //                ROS_WARN("could not enable elbow joint controller for right arm");
 //            }
@@ -445,7 +445,7 @@ void Roboy::moveEndEffector(const roboy_communication_control::MoveEndEffectorGo
     }
 
     nh.getParam("controller", casp->controller);
-    double timestep = 0.00001;
+    double timestep = 0.000005;
 //    if(casp->id==HEAD)
 //        timestep = 0.00001;
     switch (casp->controller) {
@@ -534,25 +534,25 @@ void Roboy::moveEndEffector(const roboy_communication_control::MoveEndEffectorGo
         moveEndEffector_as[casp]->setAborted(result, "failed");
     }
 
-    if (goal->sendToRealHardware) {
-        std_srvs::SetBool msg;
-        msg.request.data = false;
-        if(casp->id==SHOULDER_LEFT){
-            if(!elbow_controller_left_srv.call(msg)){
-                ROS_WARN("could not disable elbow joint controller for left arm");
-            }
-            if(!wrist_controller_left_srv.call(msg)){
-                ROS_WARN("could not disable wrist joint controller for left arm");
-            }
-        }else if(casp->id==SHOULDER_RIGHT){
-//            if(!elbow_controller_right_srv.call(msg)){
-//                ROS_WARN("could not disable elbow joint controller for right arm");
+//    if (goal->sendToRealHardware) {
+//        if(casp->id==SHOULDER_LEFT){
+//            std_srvs::SetBool msg;
+//            msg.request.data = false;
+//            if(!elbow_controller_left_srv.call(msg)){
+//                ROS_WARN("could not disable elbow joint controller for left arm");
 //            }
-//            if(!wrist_controller_right_srv.call(msg)){
-//                ROS_WARN("could not disable wrist joint controller for right arm");
+//            if(!wrist_controller_left_srv.call(msg)){
+//                ROS_WARN("could not disable wrist joint controller for left arm");
 //            }
-        }
-    }
+//        }else if(casp->id==SHOULDER_RIGHT){
+////            if(!elbow_controller_right_srv.call(msg)){
+////                ROS_WARN("could not disable elbow joint controller for right arm");
+////            }
+////            if(!wrist_controller_right_srv.call(msg)){
+////                ROS_WARN("could not disable wrist joint controller for right arm");
+////            }
+//        }
+//    }
 
 }
 
@@ -567,10 +567,12 @@ bool Roboy::ResetService(std_srvs::Trigger::Request &req,
 bool Roboy::InitService(std_srvs::Trigger::Request &req,
                  std_srvs::Trigger::Response &res){
     for (auto casp:caspr) {
+        int number_of_motors = 0;
+        nh.getParam(casp->end_effektor_name + "/number_of_motors", number_of_motors);
         casp->motor_pos_real_offset = casp->motor_pos_real;
         stringstream str;
         str << casp->end_effektor_name << " motor offsets: \n";
-        for(int i=0;i<casp->motor_pos_real_offset.size();i++){
+        for(int i=0;i<number_of_motors;i++){
             str << "\t" << i << ": " << casp->motor_pos_real_offset[i] << endl;
         }
         ROS_INFO_STREAM(str.str());
@@ -584,8 +586,8 @@ void Roboy::setControlMode(CASPRptr casp) {
     roboy_communication_middleware::MotorConfigService msg;
     msg.request.config.id = casp->id;
     for (int motor = 0; motor < NUMBER_OF_MOTORS_PER_FPGA; motor++) {
-        msg.request.config.motors.push_back(active_motors[casp->id][motor]);
         if (motor < number_of_motors) { // position control
+            msg.request.config.motors.push_back(active_motors[casp->id][motor]);
             msg.request.config.control_mode.push_back(POSITION);
             msg.request.config.outputPosMax.push_back(1000);
             msg.request.config.outputNegMax.push_back(-1000);
