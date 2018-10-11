@@ -37,8 +37,10 @@ smach_pub = rospy.Publisher('roboy/control/smach', std_msgs.msg.String, queue_si
 def gogogo(req):
     rospy.loginfo("gogogo")
     global GOGOGO
-    GOGOGO = True
-    return std_srvs.srv.TriggerResponse()
+    if not GOGOGO:
+        GOGOGO = True
+
+    return std_srvs.srv.TriggerResponse(GOGOGO,'')
 
 class getReady(State):
 
@@ -170,6 +172,8 @@ class moveToCup(State):
             msg.data = "MOVINGTOCUP2"
             smach_pub.publish(msg)
         else:
+            msg.data = "DONE"
+            smach_pub.publish(msg)
             return 'done'
         rospy.loginfo("cup %d position %f %f %f"%(userdata.cup,pose.position.x,pose.position.y,pose.position.z))
 
@@ -179,7 +183,7 @@ class moveToCup(State):
             type=0,
             pose=pose,
             sendToRealHardware=sendtohardware,
-            timeout=20, tolerance=0.01)
+            timeout=5, tolerance=0.01)
         moveEndeffectorLeft.send_goal(goal)
         goal = roboy_communication_control.msg.LookAtGoal(
             endEffector='head',
