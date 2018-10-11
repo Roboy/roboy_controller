@@ -47,6 +47,7 @@
     </group>
 
     <node pkg="tf" type="static_transform_publisher" name="static_map" args="0 -0.12 0.045 0 0 -0.7071068 0.7071068  /head /map  100"/>
+    <!--<node pkg="tf" type="static_transform_publisher" name="static_map2" args="0 0 0 1 0 0 0  /odom /map  100"/>-->
 
     <param name="robot_description_sdf" textfile="$(find roboy_models)/$(arg model_name)/model.sdf" />
     <param name="robot_description" textfile="$(find roboy_models)/$(arg model_name)/model.urdf" />

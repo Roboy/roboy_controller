@@ -62,7 +62,8 @@ private:
     boost::shared_ptr<actionlib::SimpleActionServer<roboy_communication_control::LookAtAction>> lookAt_as;
     map<CASPRptr,boost::shared_ptr<actionlib::SimpleActionServer<roboy_communication_control::MoveEndEffectorAction>>> moveEndEffector_as;
     ros::ServiceServer reset_srv, init_srv;
-    ros::ServiceClient motor_config_srv, elbow_controller_left_srv, elbow_controller_right_srv, wrist_controller_left_srv, wrist_controller_right_srv;
+    ros::ServiceClient motor_config_head_srv, motor_config_shoulder_left_srv, motor_config_shoulder_right_srv,
+            elbow_controller_left_srv, elbow_controller_right_srv, wrist_controller_left_srv, wrist_controller_right_srv;
     ros::Time prev_time;
     boost::shared_ptr<ros::AsyncSpinner> spinner;
     map<string,double> Kp, Kd;
