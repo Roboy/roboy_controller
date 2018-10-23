@@ -25,10 +25,12 @@
 #include <tf/tf.h>
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
+#include <common_utilities/rviz_visualization.hpp>
+
 
 using namespace gazebo;
 
-class HitDetectionPlugin : public ModelPlugin {
+class HitDetectionPlugin : public ModelPlugin, public rviz_visualization {
 
 public:
     HitDetectionPlugin() : ModelPlugin() {
@@ -86,16 +88,20 @@ public:
         std::string model_name = model->GetName();
         physics::Link_V links = model->GetLinks();
         //ROS_INFO_STREAM("Model \"" << model_name << "\" links:");
-        // List all links of the model
+        // List all links of the mode
+
+        int i = 0;
         for (auto link : links) {
             std::string link_name = link->GetName();
-            auto linkPose = link->GetWorldPose().pos;
-            transform.setOrigin(tf::Vector3(linkPose.x, linkPose.y, linkPose.z));
+            auto linkPose = link->GetWorldPose();
+            transform.setOrigin(tf::Vector3(linkPose.pos.x, linkPose.pos.y, linkPose.pos.z));
             tf::Quaternion q;
             q.setRPY(0, 0, 0);
             transform.setRotation(q);
             br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", link_name));
-
+            Eigen::Vector3d pos (linkPose.pos.x, linkPose.pos.y, linkPose.pos.z);
+            Eigen::Quaterniond quat (linkPose.rot.w, linkPose.rot.x, linkPose.rot.y, linkPose.rot.z);
+            publishMesh("roboy_models","xylophone/meshes/CAD",(link_name+".stl").c_str(), pos, quat,0.001,"world","xyl", i++,1);
             //ROS_INFO_STREAM("  " << link_name<< " "<<link->GetWorldPose());
         }
 
