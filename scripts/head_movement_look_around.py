@@ -29,7 +29,7 @@ class LookAt(State):
         goal=roboy_communication_control.msg.MoveEndEffectorGoal(
             endEffector='head',
             type=2,
-            q_target=[0, 0, random.uniform(-0.1, 0.5), random.uniform(-0.7, 0.7)],
+            q_target=[0, random.uniform(-0.3, 0.3), random.uniform(0, 0.4), random.uniform(-0.5, 0.5)],
             sendToRealHardware=True,
             timeout=5, tolerance=0.01)
         lookat.send_goal(goal)

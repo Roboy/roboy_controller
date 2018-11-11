@@ -15,9 +15,9 @@ import roboy_communication_control.msg
 import roboy_communication_control.srv
 sendtohardware = True
 
-emotions = ['shy','smileblink','angry','tongue_out','kiss','pissed','happy','happy2','hypno','hypno_color','rolling','surprised']
-shoulder_left_movements = ['shoulder_left_movement0', 'shoulder_left_movement1']
-shoulder_right_movements = ['shoulder_right_movement0', 'shoulder_right_movement1', 'shoulder_right_movement2', 'shoulder_right_movement3']
+emotions = ['shy','smileblink','surprised','happy','happy2'] #,'angry','tongue_out','kiss','pissed','happy','happy2','hypno','hypno_color','rolling',
+shoulder_left_movements = ['shoulder_left_movement0', 'shoulder_left_movement1', 'shoulder_left_train_shoulder2']
+shoulder_right_movements = ['shoulder_right_movement0', 'shoulder_right_movement1']
 
 rospy.init_node('roboy_random_movement')
 shoulder_left = actionlib.SimpleActionClient('/shoulder_left_movements_server',
@@ -54,9 +54,10 @@ class RandomMovement(State):
 
         for i in range(0,int(random.uniform(4, 7))):
             emotion_srv(random.choice(emotions))
-            rospy.sleep(random.uniform(4, 6))
+            rospy.sleep(random.uniform(6, 9))
 
-        if shoulder_left.wait_for_result() and shoulder_right.wait_for_result():
+        if shoulder_right.wait_for_result() and shoulder_left.wait_for_result():
+            rospy.sleep(random.uniform(30, 43))
             return 'done'
 
 def main():

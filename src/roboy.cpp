@@ -105,12 +105,16 @@ void Roboy::sendToRealHardware(CASPRptr casp) {
                                 -myoBrick100NEncoderTicksPerMeter(casp->motor_pos[i]
                                                                   + casp->displacement_real[i]
                                                                   + casp->motor_pos_real_offset[i]));
+//                        msg.setPoints.push_back(
+//                                -myoBrick100NEncoderTicksPerMeter(casp->motor_vel[i]*0.01));
                         break;
                     case MYOBRICK300N:
                         msg.setPoints.push_back(
                                 -myoBrick300NEncoderTicksPerMeter(casp->motor_pos[i]
                                                                   + casp->displacement_real[i]
                                                                   + casp->motor_pos_real_offset[i]));
+//                        msg.setPoints.push_back(
+//                                -myoBrick300NEncoderTicksPerMeter(casp->motor_vel[i]*0.01));
                         break;
 
                 }
@@ -378,7 +382,7 @@ void Roboy::moveEndEffector(const roboy_communication_control::MoveEndEffectorGo
 
     if (goal->sendToRealHardware) {
         if(casp->id==SHOULDER_LEFT){
-            setControlMode(casp);
+//            setControlMode(casp);
 //            std_srvs::SetBool msg;
 //            msg.request.data = true;
 //            if(!elbow_controller_left_srv.call(msg)){
@@ -389,6 +393,16 @@ void Roboy::moveEndEffector(const roboy_communication_control::MoveEndEffectorGo
 //            }
         }else if(casp->id==SHOULDER_RIGHT){
 //            setControlMode(casp);
+//            std_srvs::SetBool msg;
+//            msg.request.data = true;
+//            if(!elbow_controller_right_srv.call(msg)){
+//                ROS_WARN("could not enable elbow joint controller for right arm");
+//            }
+//            if(!wrist_controller_right_srv.call(msg)){
+//                ROS_WARN("could not enable wrist joint controller for right arm");
+//            }
+        }else if(casp->id==HEAD){
+            setControlMode(casp);
 //            std_srvs::SetBool msg;
 //            msg.request.data = true;
 //            if(!elbow_controller_right_srv.call(msg)){
@@ -593,14 +607,14 @@ void Roboy::setControlMode(CASPRptr casp) {
             msg.request.config.outputNegMax.push_back(-1000);
             msg.request.config.spPosMax.push_back(1000000);
             msg.request.config.spNegMax.push_back(-1000000);
-            msg.request.config.Kp.push_back(1);
+            msg.request.config.Kp.push_back(50);
             msg.request.config.Ki.push_back(0);
             msg.request.config.Kd.push_back(0);
             msg.request.config.forwardGain.push_back(0);
             msg.request.config.deadBand.push_back(0);
             msg.request.config.IntegralPosMax.push_back(0);
             msg.request.config.IntegralNegMax.push_back(0);
-            msg.request.config.outputDivider.push_back(1);
+            msg.request.config.outputDivider.push_back(100);
             switch (casp->id) {
                 case HEAD: {
                     switch (motor_type[HEAD][motor]) {

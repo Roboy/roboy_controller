@@ -31,20 +31,20 @@ def main():
     pose.orientation.w = -0.49285
     # Open the container
     with sq:
-        Sequence.add('MOVEHOME', SimpleActionState('/Roboy/MoveEndEffector/head',
-                                                   roboy_communication_control.msg.MoveEndEffectorAction,
-                                                   goal=roboy_communication_control.msg.MoveEndEffectorGoal(
-                                                       endEffector='head',
-                                                       type=2,
-                                                       q_target=[0, 0, 0, 0], sendToRealHardware=True,
-                                                       timeout=30, tolerance=0.01)))
-        # Sequence.add('LOOKLEFT', SimpleActionState('/Roboy/MoveEndEffector/head',
-        #                                          roboy_communication_control.msg.MoveEndEffectorAction,
-        #                                          goal=roboy_communication_control.msg.MoveEndEffectorGoal(
-        #                                              endEffector='head',
-        #                                              type=2,
-        #                                              q_target=[0, 0, 0, 0.5], sendToRealHardware=True,
-        #                                              timeout=30, tolerance=0.01)))
+        # Sequence.add('MOVEHOME', SimpleActionState('/Roboy/MoveEndEffector/head',
+        #                                            roboy_communication_control.msg.MoveEndEffectorAction,
+        #                                            goal=roboy_communication_control.msg.MoveEndEffectorGoal(
+        #                                                endEffector='head',
+        #                                                type=2,
+        #                                                q_target=[0, 0, 0, 0], sendToRealHardware=True,
+        #                                                timeout=30, tolerance=0.01)))
+        Sequence.add('LOOKLEFT', SimpleActionState('/Roboy/MoveEndEffector/head',
+                                                 roboy_communication_control.msg.MoveEndEffectorAction,
+                                                 goal=roboy_communication_control.msg.MoveEndEffectorGoal(
+                                                     endEffector='head',
+                                                     type=2,
+                                                     q_target=[0, 0, 0, 0.5], sendToRealHardware=True,
+                                                     timeout=5, tolerance=0.1)))
         # Sequence.add('LOOKRIGHT', SimpleActionState('/Roboy/MoveEndEffector/head',
         #                                          roboy_communication_control.msg.MoveEndEffectorAction,
         #                                          goal=roboy_communication_control.msg.MoveEndEffectorGoal(

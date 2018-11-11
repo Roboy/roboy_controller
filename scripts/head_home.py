@@ -28,7 +28,7 @@ def main():
         type=2,
         q_target=[0, 0, 0, 0],
         sendToRealHardware=True,
-        timeout=5, tolerance=0.0)
+        timeout=30, tolerance=0.0)
     lookat.send_goal(goal)
     lookat.wait_for_result()
 

@@ -17,7 +17,7 @@ head:
     Kp: 1000
     Kd: 10
   PositionControl:
-    Kp: 1000
+    Kp: 2000
     Kd: 0
   target_frame: "cup_aruco_2"
   target_offset: [0,0,0]
