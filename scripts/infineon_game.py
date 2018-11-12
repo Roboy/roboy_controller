@@ -46,6 +46,7 @@ moveEndeffectorHead = actionlib.SimpleActionClient('/Roboy/MoveEndEffector/head'
 performMovement = actionlib.SimpleActionClient('/shoulder_left_movements_server',
                                                    roboy_communication_control.msg.PerformMovementsAction)
 
+ball_detected_pub = rospy.Publisher('roboy/control/ball_detected', std_msgs.msg.Int32, queue_size=1)
 smach_pub = rospy.Publisher('roboy/control/smach', std_msgs.msg.String, queue_size=1)
 ball_messages = 0
 cup_ball = [0,0]
@@ -85,6 +86,7 @@ class getReady(State):
         global pos_table
         global GOGOGO
         global smach_pub
+        global ball_detected_pub
         global use_aruco
         global use_head
 
@@ -168,6 +170,7 @@ class moveToCup(State):
         global ball_messages
         global use_head
         global ball_detected
+        global ball_detected_pub
         pose = geometry_msgs.msg.Pose()
         # pose.orientation.x = 0.4864
         # pose.orientation.y = 0.54329
@@ -193,6 +196,7 @@ class moveToCup(State):
                 if ball_messages>=100 and ball_detected:
                     msg.data = "DONE"
                     smach_pub.publish(msg)
+                    ball_detected_pub.publish(0)
                     rospy.loginfo('the ball is in cup 0')
                     return 'done'
 
@@ -227,6 +231,7 @@ class moveToCup(State):
                 if ball_messages>=100 and ball_detected:
                     msg.data = "DONE"
                     smach_pub.publish(msg)
+                    ball_detected_pub.publish(1)
                     rospy.loginfo('the ball is in cup 1')
                     return 'done'
             else:
@@ -259,6 +264,7 @@ class moveToCup(State):
                 if ball_messages>=100 and ball_detected:
                     msg.data = "DONE"
                     smach_pub.publish(msg)
+                    ball_detected_pub.publish(2)
                     rospy.loginfo('the ball is in cup 2')
                     return 'done'
             else:

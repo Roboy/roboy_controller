@@ -50,7 +50,7 @@ def main():
             yaw = -0.7*location[0]
             pitch = 0
             if location[1]>0:
-                pitch = 0.2+0.5*location[1]
+                pitch = 0.1+0.2*location[1]
 
             rospy.loginfo("pitch: " + str(pitch) + "\t\tyaw" + str(yaw))
             goal=roboy_communication_control.msg.MoveEndEffectorGoal(
